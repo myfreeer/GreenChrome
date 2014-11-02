@@ -91,8 +91,7 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
             wchar_t *line = ConfigProgram;
             while (line && *line)
             {
-                OutputDebugStringW(line);
-
+                //OutputDebugStringW(line);
                 STARTUPINFOW si_ = {0};
                 PROCESS_INFORMATION pi_ = {0};
                 si_.cb = sizeof(STARTUPINFO);

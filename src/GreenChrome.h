@@ -30,5 +30,6 @@ void GreenChrome();
 #include "ModifyLnk.h"
 #include "GetParent.h"
 #include "Loader.h"
+#include "NoRegisteredClass.h"
 
 #endif // __MAIN_H__

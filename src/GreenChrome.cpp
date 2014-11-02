@@ -117,6 +117,9 @@ void GreenChrome()
 	//自动给任务栏pin的快捷方式加上只读属性
 	AutoLockLnk(fullPath);
 
+	//修复Win8上常见的没有注册类错误
+	FixNoRegisteredClass();
+
 	//父进程不是Chrome，则需要启动GreenChrome功能
 	wchar_t parentPath[MAX_PATH];
 	if(GetParentPath(parentPath) && _wcsicmp(parentPath, fullPath)!=0)

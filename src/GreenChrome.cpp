@@ -77,9 +77,49 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
 	si.cb = sizeof(STARTUPINFO);
 	//GetStartupInfo(&si);
 
+    wchar_t ConfigProgram[32767];
+    GetPrivateProfileSectionW(L"追加程序", ConfigProgram, 32767, iniPath);
+
+    HANDLE programs[100]; //最多100个外部程序句柄，够用了
+    int programs_count = 0; //外部程序数量
+
+    if(ConfigProgram[0]) //配置不为空
+    {
+        CreateMutex(NULL, TRUE, L"{56A17F97-9F89-4926-8415-446649F25EB5}");
+        if (GetLastError() != ERROR_ALREADY_EXISTS) //防止重复开启外部程序
+        {
+            wchar_t *line = ConfigProgram;
+            while (line && *line)
+            {
+                OutputDebugStringW(line);
+
+                STARTUPINFOW si_ = {0};
+                PROCESS_INFORMATION pi_ = {0};
+                si_.cb = sizeof(STARTUPINFO);
+
+                if (CreateProcessW(NULL, line, NULL, NULL, false, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | CREATE_DEFAULT_ERROR_MODE, NULL, 0, &si_, &pi_))
+                {
+                    programs[programs_count] = pi_.hProcess;
+                    programs_count++;
+                    if(programs_count>=100) break;
+                }
+                line += wcslen(line) + 1;
+            }
+        }
+    }
+
 	//OutputDebugStringW(MyCommandLine);
 	if (CreateProcessW(fullPath, MyCommandLine, NULL, NULL, false, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | CREATE_DEFAULT_ERROR_MODE, NULL, 0, &si, &pi))
 	{
+	    if(programs_count)
+	    {
+	        //启动了外部程序时，首个进程不立刻退出，需要检测Chrome的关闭，然后杀掉外部程序
+            WaitForSingleObject(pi.hProcess, INFINITE);
+            for(int i=0;i<programs_count;i++)
+            {
+                TerminateProcess(programs[i], 0);
+            }
+	    }
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 		ExitProcess(0);

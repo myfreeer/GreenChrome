@@ -12,7 +12,7 @@ void FixNoRegisteredClass()
 
             if (_tcsstr(html, _T("ChromeHTML")) != 0)
             {
-                //当前关联给chrome
+                //褰撳墠鍏宠仈缁檆hrome
                 TCHAR buffer[MAX_PATH];//ChromeHTML.ULBBU7VXRLOIAV7H45MHGMEO3U\shell\open\command
                 wsprintf(buffer, _T("%s\\shell\\open\\command"), html);
 

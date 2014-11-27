@@ -46,11 +46,11 @@ wchar_t * replace(wchar_t *source,const wchar_t *sub,const wchar_t *rep)
 
 		while (*pc2 == *pc3 && *pc3 != 0 && *pc2 != 0)
 			pc2++, pc3++;
-		// я╟урвс╢╝
+		// Е╞╩Ф┴╬Е╜░Д╦╡
 		if (0 == *pc3)
 		{
 			pc3 = rep;
-			//в╥╪слФ╢З╢╝╣╫╫А╧Ш╢╝
+			//Х©╫Е┼═Ф⌡©Д╩ёД╦╡Е┬╟Г╩⌠Ф·°Д╦╡
 			while (*pc3 != 0)
 				*pc1++ = *pc3++;
 			pc2--;

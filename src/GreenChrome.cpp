@@ -19,7 +19,7 @@ void AppendPath(wchar_t *path, const wchar_t* append)
 	free(temp);
 }
 
-// 构造新命令行
+//构造新命令行
 void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *fullPath)
 {
 	wchar_t *MyCommandLine = (wchar_t *)malloc(MAX_SIZE);
@@ -30,15 +30,18 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
 	for(int i=0; i<nArgs; i++)
 	{
 		// 原样拼接参数
-		if(i!=0) wcscat(MyCommandLine, L" ");
+		if(i!=0)
+		{
+			wcscat(MyCommandLine, L" ");
+		}
 		AppendPath(MyCommandLine, szArglist[i]);
 
 		if(i==0) //在进程路径后面追加参数
 		{
 			wchar_t *temp = (wchar_t *)malloc(MAX_SIZE);
 
-			wchar_t ConfigList[32767];
-			GetPrivateProfileSectionW(L"追加参数", ConfigList, 32767, iniPath);
+			wchar_t ConfigList[MAX_SIZE];
+			GetPrivateProfileSectionW(L"追加参数", ConfigList, MAX_SIZE, iniPath);
 
 			wchar_t *line = ConfigList;
 			while (line && *line)
@@ -71,24 +74,66 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
 	}
 	LocalFree(szArglist);
 
+    wchar_t StartProgram[MAX_SIZE];
+    GetPrivateProfileSectionW(L"启动时运行", StartProgram, MAX_SIZE, iniPath);
+
+    wchar_t EndProgram[MAX_SIZE];
+    GetPrivateProfileSectionW(L"结束时运行", EndProgram, MAX_SIZE, iniPath);
+
+    int first_dll = false;//是否是首先启动的dll
+    CreateMutex(NULL, TRUE, L"{56A17F97-9F89-4926-8415-446649F25EB5}");
+    if (GetLastError() != ERROR_ALREADY_EXISTS)
+    {
+    	first_dll = true;
+    }
+
+    HANDLE programs[100]; //最多100个外部程序句柄，够用了
+    int programs_count = 0; //外部程序数量
+
+    if(first_dll)
+    {
+        wchar_t *line = StartProgram;
+        while (line && *line)
+        {
+            //OutputDebugStringW(line);
+            STARTUPINFOW si_ = {0};
+            PROCESS_INFORMATION pi_ = {0};
+            si_.cb = sizeof(STARTUPINFO);
+
+            if (CreateProcessW(NULL, line, NULL, NULL, false, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | CREATE_DEFAULT_ERROR_MODE, NULL, 0, &si_, &pi_))
+            {
+                programs[programs_count] = pi_.hProcess;
+                programs_count++;
+                if(programs_count>=100) break;
+            }
+
+            line += wcslen(line) + 1;
+        }
+    }
+
+
 	//启动进程
 	STARTUPINFOW si = {0};
 	PROCESS_INFORMATION pi = {0};
 	si.cb = sizeof(STARTUPINFO);
 	//GetStartupInfo(&si);
+	//OutputDebugStringW(MyCommandLine);
+	if (CreateProcessW(fullPath, MyCommandLine, NULL, NULL, false, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | CREATE_DEFAULT_ERROR_MODE, NULL, 0, &si, &pi))
+	{
+	    if(first_dll)
+	    {
+	        //启动了外部程序时，首个进程不立刻退出，需要检测Chrome的关闭，然后杀掉外部程序
+	        //需要结束外部程序，也需要等待处理
+            WaitForSingleObject(pi.hProcess, INFINITE);
 
-    wchar_t ConfigProgram[32767];
-    GetPrivateProfileSectionW(L"追加程序", ConfigProgram, 32767, iniPath);
+            //结束附加启动程序
+            for(int i=0;i<programs_count;i++)
+            {
+                TerminateProcess(programs[i], 0);
+            }
 
-    HANDLE programs[100]; //最多100个外部程序句柄，够用了
-    int programs_count = 0; //外部程序数量
-
-    if(ConfigProgram[0]) //配置不为空
-    {
-        CreateMutex(NULL, TRUE, L"{56A17F97-9F89-4926-8415-446649F25EB5}");
-        if (GetLastError() != ERROR_ALREADY_EXISTS) //防止重复开启外部程序
-        {
-            wchar_t *line = ConfigProgram;
+            //强制杀掉额外程序
+            wchar_t *line = EndProgram;
             while (line && *line)
             {
                 //OutputDebugStringW(line);
@@ -96,29 +141,13 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
                 PROCESS_INFORMATION pi_ = {0};
                 si_.cb = sizeof(STARTUPINFO);
 
-                if (CreateProcessW(NULL, line, NULL, NULL, false, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | CREATE_DEFAULT_ERROR_MODE, NULL, 0, &si_, &pi_))
-                {
-                    programs[programs_count] = pi_.hProcess;
-                    programs_count++;
-                    if(programs_count>=100) break;
-                }
+                CreateProcessW(NULL, line, NULL, NULL, false, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | CREATE_DEFAULT_ERROR_MODE, NULL, 0, &si_, &pi_);
+
+
                 line += wcslen(line) + 1;
             }
-        }
-    }
-
-	//OutputDebugStringW(MyCommandLine);
-	if (CreateProcessW(fullPath, MyCommandLine, NULL, NULL, false, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | CREATE_DEFAULT_ERROR_MODE, NULL, 0, &si, &pi))
-	{
-	    if(programs_count)
-	    {
-	        //启动了外部程序时，首个进程不立刻退出，需要检测Chrome的关闭，然后杀掉外部程序
-            WaitForSingleObject(pi.hProcess, INFINITE);
-            for(int i=0;i<programs_count;i++)
-            {
-                TerminateProcess(programs[i], 0);
-            }
 	    }
+
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 		ExitProcess(0);
@@ -142,7 +171,7 @@ void GreenChrome()
 	wcscpy(iniPath, exePath);
 	wcscat(iniPath, L"\\GreenChrome.ini");
 
-	// 生成默认ini文件
+	//生成默认ini文件
 	if(!PathFileExistsW(iniPath))
 	{
 		FILE *fp = _wfopen(iniPath, L"wb");
@@ -163,7 +192,7 @@ void GreenChrome()
 	wchar_t parentPath[MAX_PATH];
 	if(GetParentPath(parentPath) && _wcsicmp(parentPath, fullPath)!=0)
 	{
-		// 根据配置文件插入额外的命令行参数
+		//根据配置文件插入额外的命令行参数
 		NewCommand(iniPath, exePath, fullPath);
 	}
 }
@@ -175,7 +204,7 @@ EXTERNC BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID pv)
 		//保持系统dll原有功能
 		LoadSysDll(hModule);
 
-		//修改程序入口点
+		//修改程序入口点为 GreenChrome
 		InstallLoader();
 	}
 	return TRUE;

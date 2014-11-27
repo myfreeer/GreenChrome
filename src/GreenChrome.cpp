@@ -77,8 +77,8 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
     wchar_t StartProgram[MAX_SIZE];
     GetPrivateProfileSectionW(L"启动时运行", StartProgram, MAX_SIZE, iniPath);
 
-    wchar_t EndProgram[MAX_SIZE];
-    GetPrivateProfileSectionW(L"结束时运行", EndProgram, MAX_SIZE, iniPath);
+    wchar_t CloseProgram[MAX_SIZE];
+    GetPrivateProfileSectionW(L"关闭时运行", CloseProgram, MAX_SIZE, iniPath);
 
     int first_dll = false;//是否是首先启动的dll
     CreateMutex(NULL, TRUE, L"{56A17F97-9F89-4926-8415-446649F25EB5}");
@@ -133,13 +133,15 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
             }
 
             //强制杀掉额外程序
-            wchar_t *line = EndProgram;
+            wchar_t *line = CloseProgram;
             while (line && *line)
             {
                 //OutputDebugStringW(line);
                 STARTUPINFOW si_ = {0};
                 PROCESS_INFORMATION pi_ = {0};
                 si_.cb = sizeof(STARTUPINFO);
+                si_.dwFlags = STARTF_USESHOWWINDOW;
+                si_.wShowWindow = SW_HIDE;
 
                 CreateProcessW(NULL, line, NULL, NULL, false, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | CREATE_DEFAULT_ERROR_MODE, NULL, 0, &si_, &pi_);
 

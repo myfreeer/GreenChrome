@@ -9,7 +9,8 @@
 bool DoubleClickCloseTab = true;
 bool RightClickCloseTab = true;
 bool KeepLeftmostTab = true;
-bool FastTabSwitch = true;
+bool FastTabSwitch1 = true;
+bool FastTabSwitch2 = true;
 
 HMODULE hInstance;
 
@@ -30,22 +31,31 @@ HHOOK mouse_hook;
 LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     static bool close_tab_ing = false;
+    static bool wheel_tab_ing = false;
+
     bool close_tab = false;
     bool keep_tab = false;
 
-    PMOUSEHOOKSTRUCT pmouse = (PMOUSEHOOKSTRUCT) lParam;
-    wchar_t name[256];
-    GetClassName(pmouse->hwnd, name, 256);
-
-    if (nCode==HC_ACTION && wcscmp(name, L"Chrome_WidgetWin_1")==0)
+    if (nCode==HC_ACTION)
     {
+        PMOUSEHOOKSTRUCT pmouse = (PMOUSEHOOKSTRUCT) lParam;
         POINT pt;
         pt.x = pmouse->pt.x;
         pt.y = pmouse->pt.y;
         ScreenToClient(pmouse->hwnd, &pt);
 
+        if(wParam==WM_RBUTTONUP && wheel_tab_ing)
+        {
+            wheel_tab_ing = false;
+            return 1;
+        }
+
+        wchar_t name[256];
+        GetClassName(pmouse->hwnd, name, 256);
+        bool IsCaption = wcscmp(name, L"Chrome_WidgetWin_1")==0;
+
         int close_region[] = {45, 25};
-        if(wParam==WM_LBUTTONDBLCLK&&DoubleClickCloseTab)
+        if(wParam==WM_LBUTTONDBLCLK && DoubleClickCloseTab && IsCaption)
         {
             if(pt.y<close_region[IsZoomed(pmouse->hwnd)])
             {
@@ -53,7 +63,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
         }
 
-        if(wParam==WM_RBUTTONUP&&RightClickCloseTab)
+        if(wParam==WM_RBUTTONUP && RightClickCloseTab && IsCaption)
         {
             int hittest = (int)SendMessage(pmouse->hwnd, WM_NCHITTEST, 0, MAKELONG(pmouse->pt.x, pmouse->pt.y));
 
@@ -63,7 +73,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
         }
 
-        if(close_tab && KeepLeftmostTab)
+        if(close_tab && KeepLeftmostTab && IsCaption)
         {
             int keep_region[] = {204, 212};
             if(pt.x<keep_region[IsZoomed(pmouse->hwnd)])
@@ -72,7 +82,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
         }
 
-        if(wParam==WM_MBUTTONUP)
+        if(wParam==WM_MBUTTONUP && IsCaption)
         {
             if(close_tab_ing)
             {
@@ -100,7 +110,8 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             } MOUSEHOOKSTRUCTEX, *PMOUSEHOOKSTRUCTEX, *LPMOUSEHOOKSTRUCTEX;
             PMOUSEHOOKSTRUCTEX pwheel = (PMOUSEHOOKSTRUCTEX) lParam;
 
-            if(pt.y<close_region[IsZoomed(pmouse->hwnd)])
+            #define KEY_PRESSED 0x8000
+            if( (FastTabSwitch1 && pt.y<close_region[IsZoomed(pmouse->hwnd)]) || (FastTabSwitch2 && GetAsyncKeyState(VK_RBUTTON) & KEY_PRESSED))
             {
                 int zDelta = GET_WHEEL_DELTA_WPARAM(pwheel->mouseData);
                 if(zDelta>0)
@@ -142,7 +153,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
                     SendInput(2, input, sizeof(INPUT));
 
                 }
-                OutputDebugStringA("WM_MOUSEWHEEL");
+                wheel_tab_ing = true;
                 return 1;
             }
         }
@@ -373,8 +384,9 @@ void GreenChrome()
     DoubleClickCloseTab = GetPrivateProfileInt(L"其它设置", L"双击关闭标签", 1, iniPath)==1;
     RightClickCloseTab = GetPrivateProfileInt(L"其它设置", L"右键关闭标签", 1, iniPath)==1;
     KeepLeftmostTab = GetPrivateProfileInt(L"其它设置", L"保留最左标签", 1, iniPath)==1;
-    FastTabSwitch = GetPrivateProfileInt(L"其它设置", L"快速标签切换", 1, iniPath)==1;
-    if(DoubleClickCloseTab || RightClickCloseTab || KeepLeftmostTab || FastTabSwitch)
+    FastTabSwitch1 = GetPrivateProfileInt(L"其它设置", L"快速标签切换1", 1, iniPath)==1;
+    FastTabSwitch2 = GetPrivateProfileInt(L"其它设置", L"快速标签切换2", 1, iniPath)==1;
+    if(DoubleClickCloseTab || RightClickCloseTab || KeepLeftmostTab || FastTabSwitch1 || FastTabSwitch2)
     {
         if(!wcsstr(GetCommandLineW(), L"--channel"))
         {

@@ -32,9 +32,13 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
     static bool close_tab_ing = false;
     bool close_tab = false;
     bool keep_tab = false;
-    if (nCode==HC_ACTION)
+
+    PMOUSEHOOKSTRUCT pmouse = (PMOUSEHOOKSTRUCT) lParam;
+    wchar_t name[256];
+    GetClassName(pmouse->hwnd, name, 256);
+
+    if (nCode==HC_ACTION && wcscmp(name, L"Chrome_WidgetWin_1")==0)
     {
-        PMOUSEHOOKSTRUCT pmouse = (PMOUSEHOOKSTRUCT) lParam;
         POINT pt;
         pt.x = pmouse->pt.x;
         pt.y = pmouse->pt.y;

@@ -54,7 +54,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
         GetClassName(pmouse->hwnd, name, 256);
         bool IsCaption = wcscmp(name, L"Chrome_WidgetWin_1")==0;
 
-        int close_region[] = {45, 25};
+        int close_region[] = {50, 30};
         if(wParam==WM_LBUTTONDBLCLK && DoubleClickCloseTab && IsCaption)
         {
             if(pt.y<close_region[IsZoomed(pmouse->hwnd)])
@@ -73,10 +73,11 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
         }
 
+        int keep_region[] = {204, 212};
         if(close_tab && KeepLeftmostTab && IsCaption)
         {
-            int keep_region[] = {204, 212};
-            if(pt.x<keep_region[IsZoomed(pmouse->hwnd)])
+
+            if(pt.x<keep_region[IsZoomed(pmouse->hwnd)] && pt.y<close_region[IsZoomed(pmouse->hwnd)])
             {
                 keep_tab = true;
             }
@@ -92,8 +93,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             {
                 if(KeepLeftmostTab)
                 {
-                    int keep_region[] = {204, 212};
-                    if(pt.x<keep_region[IsZoomed(pmouse->hwnd)])
+                    if(pt.x<keep_region[IsZoomed(pmouse->hwnd)] && pt.y<close_region[IsZoomed(pmouse->hwnd)])
                     {
                         keep_tab = true;
                         close_tab = true;

@@ -5,8 +5,8 @@ bool RightClickCloseTab = false;
 bool KeepLastTab = true;
 bool FastTabSwitch1 = true;
 bool FastTabSwitch2 = true;
-bool BookMarkNewTab = true;
-bool OpenUrlNewTab = true;
+bool BookMarkNewTab = false;
+bool OpenUrlNewTab = false;
 
 typedef struct tagMOUSEHOOKSTRUCTEX
 {
@@ -393,14 +393,22 @@ bool IsOmniboxViewFocus(IAccessible* top)
                     self.vt = VT_I4;
                     self.lVal = CHILDID_SELF;
 
-                    VARIANT varRetVal;
-                    OmniboxViewViews->get_accState(self, &varRetVal);
-                    if (varRetVal.vt == VT_I4)
+                    BSTR bstrName = NULL;
+                    if( S_OK == OmniboxViewViews->get_accValue(self, &bstrName) )
                     {
-                        if( (varRetVal.lVal & STATE_SYSTEM_FOCUSED) == STATE_SYSTEM_FOCUSED)
+                        if(bstrName[0]!=0)//地址栏不为空
                         {
-                            flag = true;
+                            VARIANT varRetVal;
+                            OmniboxViewViews->get_accState(self, &varRetVal);
+                            if (varRetVal.vt == VT_I4)
+                            {
+                                if( (varRetVal.lVal & STATE_SYSTEM_FOCUSED) == STATE_SYSTEM_FOCUSED)
+                                {
+                                    flag = true;
+                                }
+                            }
                         }
+                        SysFreeString(bstrName);
                     }
                     OmniboxViewViews->Release();
                 }
@@ -555,8 +563,8 @@ void TabBookmark(HMODULE hInstance, const wchar_t *iniPath)
     KeepLastTab = GetPrivateProfileInt(L"其它设置", L"保留最后标签", 1, iniPath)==1;
     FastTabSwitch1 = GetPrivateProfileInt(L"其它设置", L"快速标签切换1", 1, iniPath)==1;
     FastTabSwitch2 = GetPrivateProfileInt(L"其它设置", L"快速标签切换2", 1, iniPath)==1;
-    BookMarkNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开书签", 1, iniPath)==1;
-    OpenUrlNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开网址", 1, iniPath)==1;
+    BookMarkNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开书签", 0, iniPath)==1;
+    OpenUrlNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开网址", 0, iniPath)==1;
 
     if(!wcsstr(GetCommandLineW(), L"--channel"))
     {

@@ -6,12 +6,6 @@
 
 #define MAX_SIZE 32767
 
-bool DoubleClickCloseTab = true;
-bool RightClickCloseTab = true;
-bool KeepLeftmostTab = true;
-bool FastTabSwitch1 = true;
-bool FastTabSwitch2 = true;
-
 HMODULE hInstance;
 
 //自动添加引号
@@ -25,178 +19,6 @@ void AppendPath(wchar_t *path, const wchar_t* append)
 	wcscat(path, temp);
 
 	free(temp);
-}
-
-HHOOK mouse_hook;
-LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
-{
-    static bool close_tab_ing = false;
-    static bool wheel_tab_ing = false;
-
-    bool close_tab = false;
-    bool keep_tab = false;
-
-    if (nCode==HC_ACTION)
-    {
-        PMOUSEHOOKSTRUCT pmouse = (PMOUSEHOOKSTRUCT) lParam;
-        POINT pt;
-        pt.x = pmouse->pt.x;
-        pt.y = pmouse->pt.y;
-        ScreenToClient(pmouse->hwnd, &pt);
-
-        if(wParam==WM_RBUTTONUP && wheel_tab_ing)
-        {
-            wheel_tab_ing = false;
-            return 1;
-        }
-
-        wchar_t name[256];
-        GetClassName(pmouse->hwnd, name, 256);
-        bool IsCaption = wcscmp(name, L"Chrome_WidgetWin_1")==0;
-
-        int close_region[] = {50, 30};
-        if(wParam==WM_LBUTTONDBLCLK && DoubleClickCloseTab && IsCaption)
-        {
-            if(pt.y<close_region[IsZoomed(pmouse->hwnd)])
-            {
-                close_tab = true;
-            }
-        }
-
-        if(wParam==WM_RBUTTONUP && RightClickCloseTab && IsCaption)
-        {
-            int hittest = (int)SendMessage(pmouse->hwnd, WM_NCHITTEST, 0, MAKELONG(pmouse->pt.x, pmouse->pt.y));
-
-            if(hittest==HTCLIENT && pt.y<close_region[IsZoomed(pmouse->hwnd)])
-            {
-                close_tab = true;
-            }
-        }
-
-        int keep_region[] = {204, 212};
-        if(close_tab && KeepLeftmostTab && IsCaption)
-        {
-
-            if(pt.x<keep_region[IsZoomed(pmouse->hwnd)] && pt.y<close_region[IsZoomed(pmouse->hwnd)])
-            {
-                keep_tab = true;
-            }
-        }
-
-        if(wParam==WM_MBUTTONUP && IsCaption)
-        {
-            if(close_tab_ing)
-            {
-                close_tab_ing = false;
-            }
-            else
-            {
-                if(KeepLeftmostTab)
-                {
-                    if(pt.x<keep_region[IsZoomed(pmouse->hwnd)] && pt.y<close_region[IsZoomed(pmouse->hwnd)])
-                    {
-                        keep_tab = true;
-                        close_tab = true;
-                    }
-                }
-            }
-        }
-
-        if(wParam==WM_MOUSEWHEEL)
-        {
-            typedef struct tagMOUSEHOOKSTRUCTEX {
-              MOUSEHOOKSTRUCT x;
-              DWORD           mouseData;
-            } MOUSEHOOKSTRUCTEX, *PMOUSEHOOKSTRUCTEX, *LPMOUSEHOOKSTRUCTEX;
-            PMOUSEHOOKSTRUCTEX pwheel = (PMOUSEHOOKSTRUCTEX) lParam;
-
-            #define KEY_PRESSED 0x8000
-            if( (FastTabSwitch1 && pt.y<close_region[IsZoomed(pmouse->hwnd)]) || (FastTabSwitch2 && GetAsyncKeyState(VK_RBUTTON) & KEY_PRESSED))
-            {
-                int zDelta = GET_WHEEL_DELTA_WPARAM(pwheel->mouseData);
-                if(zDelta>0)
-                {
-                    INPUT input[2];
-                    memset(input, 0, sizeof(input));
-
-                    input[0].type = INPUT_KEYBOARD;
-                    input[1].type = INPUT_KEYBOARD;
-
-                    input[0].ki.wVk = VK_CONTROL;
-                    input[1].ki.wVk = VK_PRIOR;
-
-                    input[0].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
-                    input[1].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
-                    SendInput(2, input, sizeof(INPUT));
-
-                    input[0].ki.dwFlags |= KEYEVENTF_KEYUP;
-                    input[1].ki.dwFlags |= KEYEVENTF_KEYUP;
-                    SendInput(2, input, sizeof(INPUT));
-                }
-                else
-                {
-                    INPUT input[2];
-                    memset(input, 0, sizeof(input));
-
-                    input[0].type = INPUT_KEYBOARD;
-                    input[1].type = INPUT_KEYBOARD;
-
-                    input[0].ki.wVk = VK_CONTROL;
-                    input[1].ki.wVk = VK_NEXT;
-
-                    input[0].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
-                    input[1].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
-                    SendInput(2, input, sizeof(INPUT));
-
-                    input[0].ki.dwFlags |= KEYEVENTF_KEYUP;
-                    input[1].ki.dwFlags |= KEYEVENTF_KEYUP;
-                    SendInput(2, input, sizeof(INPUT));
-
-                }
-                wheel_tab_ing = true;
-                return 1;
-            }
-        }
-    }
-
-    if(keep_tab)
-    {
-        INPUT input[2];
-        memset(input, 0, sizeof(input));
-
-        input[0].type = INPUT_KEYBOARD;
-        input[1].type = INPUT_KEYBOARD;
-
-        input[0].ki.wVk = VK_CONTROL;
-        input[1].ki.wVk = 'T';
-
-        input[0].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
-        input[1].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
-        SendInput(2, input, sizeof(INPUT));
-
-        input[0].ki.dwFlags |= KEYEVENTF_KEYUP;
-        input[1].ki.dwFlags |= KEYEVENTF_KEYUP;
-        SendInput(2, input, sizeof(INPUT));
-    }
-
-    if(close_tab)
-    {
-        INPUT input[1];
-        memset(input, 0, sizeof(input));
-
-        input[0].type = INPUT_MOUSE;
-
-        input[0].mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
-        SendInput(1, input, sizeof(INPUT));
-
-        input[0].mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
-        SendInput(1, input, sizeof(INPUT));
-
-        close_tab_ing = true;
-        return 1;
-    }
-
-    return CallNextHookEx(mouse_hook, nCode, wParam, lParam );
 }
 
 //构造新命令行
@@ -335,7 +157,6 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
 
                 CreateProcessW(NULL, line, NULL, NULL, false, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | CREATE_DEFAULT_ERROR_MODE, NULL, 0, &si_, &pi_);
 
-
                 line += wcslen(line) + 1;
             }
 	    }
@@ -380,19 +201,8 @@ void GreenChrome()
 	//修复Win8上常见的没有注册类错误
 	FixNoRegisteredClass();
 
-    //
-    DoubleClickCloseTab = GetPrivateProfileInt(L"其它设置", L"双击关闭标签", 1, iniPath)==1;
-    RightClickCloseTab = GetPrivateProfileInt(L"其它设置", L"右键关闭标签", 1, iniPath)==1;
-    KeepLeftmostTab = GetPrivateProfileInt(L"其它设置", L"保留最左标签", 1, iniPath)==1;
-    FastTabSwitch1 = GetPrivateProfileInt(L"其它设置", L"快速标签切换1", 1, iniPath)==1;
-    FastTabSwitch2 = GetPrivateProfileInt(L"其它设置", L"快速标签切换2", 1, iniPath)==1;
-    if(DoubleClickCloseTab || RightClickCloseTab || KeepLeftmostTab || FastTabSwitch1 || FastTabSwitch2)
-    {
-        if(!wcsstr(GetCommandLineW(), L"--channel"))
-        {
-            mouse_hook = SetWindowsHookEx(WH_MOUSE, MouseProc, hInstance, GetCurrentThreadId());
-        }
-    }
+    //标签页，书签，地址栏增强
+    TabBookmark(hInstance, iniPath);
 
 	//父进程不是Chrome，则需要启动GreenChrome功能
 	wchar_t parentPath[MAX_PATH];

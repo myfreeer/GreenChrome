@@ -14,7 +14,7 @@
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
-					<Add option="-O3" />
+					<Add option="-Os" />
 					<Add option="-Wall" />
 					<Add option="-DBUILD_DLL" />
 				</Compiler>
@@ -25,6 +25,8 @@
 					<Add library="psapi" />
 					<Add library="ole32" />
 					<Add library="uuid" />
+					<Add library="oleacc" />
+					<Add library="liboleaut32" />
 				</Linker>
 			</Target>
 		</Build>

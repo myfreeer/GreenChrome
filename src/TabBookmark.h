@@ -94,14 +94,14 @@ void OpenNewUrlTab()
 browser/ui/views/frame/BrowserRootView
 ui/views/window/NonClientView
 BrowserView
-TopContainerView
-    TabStrip
-        Tab
-            TabCloseButton
-        ImageButton
-    ToolbarView
-        LocationBarView
-            OmniboxViewViews
+    TopContainerView
+        TabStrip
+            Tab
+                TabCloseButton
+            ImageButton
+        ToolbarView
+            LocationBarView
+                OmniboxViewViews
     BookmarkBarView
         BookmarkButton
 */
@@ -322,63 +322,84 @@ bool IsOnlyOneTab(IAccessible* top)
     return false;
 }
 
+
+bool IsOnOneBookmarkInner(IAccessible* parent, POINT pt)
+{
+    bool flag = false;
+    IAccessible *BookmarkBarView = FindChildElement(parent, false, L"BookmarkBarView");
+    if(BookmarkBarView)
+    {
+        long childCount = 0;
+        if( S_OK == BookmarkBarView->get_accChildCount(&childCount) && childCount)
+        {
+            VARIANT* varChildren = (VARIANT*)malloc(sizeof(VARIANT) * childCount);
+            if( S_OK == AccessibleChildren(BookmarkBarView, 0, childCount, varChildren, &childCount) )
+            {
+                for(int i=0; i<childCount; i++)
+                {
+                    if( varChildren[i].vt==VT_DISPATCH )
+                    {
+                        IDispatch* dispatch = varChildren[i].pdispVal;
+                        IAccessible* child = NULL;
+                        if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
+                        {
+                            VARIANT self;
+                            self.vt = VT_I4;
+                            self.lVal = CHILDID_SELF;
+
+                            BSTR bstrName = NULL;
+                            if( S_OK == child->get_accHelp(self, &bstrName) )
+                            {
+                                if(wcscmp(bstrName, L"BookmarkButton")==0)
+                                {
+                                    RECT rect;
+                                    if( S_OK == child->accLocation(&rect.left, &rect.top, &rect.right, &rect.bottom, self))
+                                    {
+                                        rect.right += rect.left;
+                                        rect.bottom += rect.top;
+
+                                        if(PtInRect(&rect, pt))
+                                        {
+                                            flag = true;
+                                        }
+                                    }
+                                }
+                                SysFreeString(bstrName);
+                            }
+                            child->Release();
+                        }
+                        dispatch->Release();
+                    }
+                }
+            }
+            free(varChildren);
+        }
+        BookmarkBarView->Release();
+    }
+    return flag;
+}
+
 //是否点击书签栏
 bool IsOnOneBookmark(IAccessible* top, POINT pt)
 {
     bool flag = false;
     if(top)
     {
-        IAccessible *BookmarkBarView = FindChildElement(top, false, L"BookmarkBarView");
-        if(BookmarkBarView)
+        //开启了书签栏长显
+        if(IsOnOneBookmarkInner(top, pt)) return true;
+
+        //未开启书签栏长显
+        IDispatch* dispatch = NULL;
+        if( S_OK == top->get_accParent(&dispatch) && dispatch)
         {
-            long childCount = 0;
-            if( S_OK == BookmarkBarView->get_accChildCount(&childCount) && childCount)
+            IAccessible* parent = NULL;
+            if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&parent))
             {
-                VARIANT* varChildren = (VARIANT*)malloc(sizeof(VARIANT) * childCount);
-                if( S_OK == AccessibleChildren(BookmarkBarView, 0, childCount, varChildren, &childCount) )
-                {
-                    for(int i=0; i<childCount; i++)
-                    {
-                        if( varChildren[i].vt==VT_DISPATCH )
-                        {
-                            IDispatch* dispatch = varChildren[i].pdispVal;
-                            IAccessible* child = NULL;
-                            if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
-                            {
-                                VARIANT self;
-                                self.vt = VT_I4;
-                                self.lVal = CHILDID_SELF;
-
-                                BSTR bstrName = NULL;
-                                if( S_OK == child->get_accHelp(self, &bstrName) )
-                                {
-                                    if(wcscmp(bstrName, L"BookmarkButton")==0)
-                                    {
-                                        RECT rect;
-                                        if( S_OK == child->accLocation(&rect.left, &rect.top, &rect.right, &rect.bottom, self))
-                                        {
-                                            rect.right += rect.left;
-                                            rect.bottom += rect.top;
-
-                                            if(PtInRect(&rect, pt))
-                                            {
-                                                flag = true;
-                                            }
-                                        }
-                                    }
-                                    SysFreeString(bstrName);
-                                }
-                                child->Release();
-                            }
-                            dispatch->Release();
-                        }
-                    }
-                }
-                free(varChildren);
+                flag = IsOnOneBookmarkInner(parent, pt);
+                parent->Release();
             }
-            BookmarkBarView->Release();
+            dispatch->Release();
         }
-
     }
     return flag;
 }
@@ -497,11 +518,15 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             {
                 SwitchTab(zDelta);
                 wheel_tab_ing = true;
+                if(TopContainerView)
+                {
+                    TopContainerView->Release();
+                }
                 return 1;
             }
         }
 
-        if(wParam==WM_LBUTTONUP && BookMarkNewTab && IsOnOneBookmark(TopContainerView, pmouse->pt) && !(GetAsyncKeyState(VK_CONTROL) & KEY_PRESSED) )
+        if(wParam==WM_LBUTTONUP && BookMarkNewTab && !(GetAsyncKeyState(VK_CONTROL) & KEY_PRESSED) && IsOnOneBookmark(TopContainerView, pmouse->pt) )
         {
             bookmark_new_tab = true;
         }
@@ -549,15 +574,20 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
 
             IAccessible* TopContainerView = GetTopContainerView(GetForegroundWindow());
-            if(IsOmniboxViewFocus(TopContainerView) && !(GetAsyncKeyState(VK_MENU) & KEY_PRESSED))
+            if( !(GetAsyncKeyState(VK_MENU) & KEY_PRESSED) && IsOmniboxViewFocus(TopContainerView) )
             {
                 open_url_ing = true;
-                OpenNewUrlTab();
-                return 1;
             }
+
             if(TopContainerView)
             {
                 TopContainerView->Release();
+            }
+
+            if(open_url_ing)
+            {
+                OpenNewUrlTab();
+                return 1;
             }
         }
     }

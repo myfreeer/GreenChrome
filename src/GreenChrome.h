@@ -14,6 +14,7 @@
 #include <shlobj.h>
 #include <psapi.h>
 #include <oleacc.h>
+#include <process.h>
 
 // 定义MWORD为机器字长
 #include <stdint.h>
@@ -33,5 +34,6 @@ void GreenChrome();
 #include "Loader.h"
 #include "NoRegisteredClass.h"
 #include "TabBookmark.h"
+#include "Bosskey.h"
 
 #endif // __MAIN_H__

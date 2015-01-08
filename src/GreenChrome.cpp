@@ -119,6 +119,9 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
             line += wcslen(line) + 1;
         }
         free(temp);
+
+        //老板键
+        Bosskey(iniPath);
     }
 
 	//启动进程

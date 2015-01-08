@@ -139,7 +139,7 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
             WaitForSingleObject(pi.hProcess, INFINITE);
 
             //结束附加启动程序
-            if(GetPrivateProfileInt(L"其它设置", L"自动关闭", 1, iniPath)==1)
+            if(GetPrivateProfileInt(L"其它设置", L"自动关闭", 0, iniPath)==1)
             {
                 for(int i=0;i<programs_count;i++)
                 {

@@ -31,8 +31,18 @@
 				</Linker>
 			</Target>
 		</Build>
+		<Unit filename="Bosskey.h" />
+		<Unit filename="DefaultConfig.h" />
+		<Unit filename="GetParent.h" />
 		<Unit filename="GreenChrome.cpp" />
 		<Unit filename="GreenChrome.h" />
+		<Unit filename="Loader.h" />
+		<Unit filename="ModifyLnk.h" />
+		<Unit filename="NoRegisteredClass.h" />
+		<Unit filename="Parsekeys.h" />
+		<Unit filename="TabBookmark.h" />
+		<Unit filename="Util.h" />
+		<Unit filename="winmm.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

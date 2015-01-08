@@ -108,41 +108,43 @@ TopContainerView
 
 IAccessible* FindChildElement(IAccessible *parent, bool aoto_release, const wchar_t *name)
 {
-    long count = 0;
-    if( S_OK == parent->get_accChildCount(&count) )
+    long childCount = 0;
+    if( S_OK == parent->get_accChildCount(&childCount) && childCount)
     {
-        for(int i=0; i<count; i++)
+        VARIANT* varChildren = (VARIANT*)malloc(sizeof(VARIANT) * childCount);
+        if( S_OK == AccessibleChildren(parent, 0, childCount, varChildren, &childCount) )
         {
-            VARIANT var_child = {0};
-            LONG pcObtained;
-            AccessibleChildren(parent, i, 1, &var_child, &pcObtained);
-            if( var_child.vt==VT_DISPATCH )
+            for(int i=0;i<childCount;i++)
             {
-                IDispatch* dispatch = var_child.pdispVal;
-                IAccessible* child = NULL;
-                if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
+                if( varChildren[i].vt==VT_DISPATCH )
                 {
-                    VARIANT self;
-                    self.vt = VT_I4;
-                    self.lVal = CHILDID_SELF;
-
-                    BSTR bstrName = NULL;
-                    if( S_OK == child->get_accHelp(self, &bstrName) )
+                    IDispatch* dispatch = varChildren[i].pdispVal;
+                    IAccessible* child = NULL;
+                    if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
                     {
-                        if(wcscmp(bstrName, name)==0)
+                        VARIANT self;
+                        self.vt = VT_I4;
+                        self.lVal = CHILDID_SELF;
+
+                        BSTR bstrName = NULL;
+                        if( S_OK == child->get_accHelp(self, &bstrName) )
                         {
+                            if(wcscmp(bstrName, name)==0)
+                            {
+                                SysFreeString(bstrName);
+                                dispatch->Release();
+                                if(aoto_release) parent->Release();
+                                return child;
+                            }
                             SysFreeString(bstrName);
-                            dispatch->Release();
-                            if(aoto_release) parent->Release();
-                            return child;
                         }
-                        SysFreeString(bstrName);
+                        child->Release();
                     }
-                    child->Release();
+                    dispatch->Release();
                 }
-                dispatch->Release();
             }
         }
+        free(varChildren);
     }
     if(aoto_release) parent->Release();
     return NULL;
@@ -217,48 +219,50 @@ bool IsOnOneTab(IAccessible* top, POINT pt)
         IAccessible *TabStrip = FindChildElement(top, false, L"TabStrip");
         if(TabStrip)
         {
-            long count = 0;
-            if( S_OK == TabStrip->get_accChildCount(&count) )
+            long childCount = 0;
+            if( S_OK == TabStrip->get_accChildCount(&childCount) && childCount)
             {
-                for(int i=0; i<count; i++)
+                VARIANT* varChildren = (VARIANT*)malloc(sizeof(VARIANT) * childCount);
+                if( S_OK == AccessibleChildren(TabStrip, 0, childCount, varChildren, &childCount) )
                 {
-                    VARIANT var_child = {0};
-                    LONG pcObtained;
-                    AccessibleChildren(TabStrip, i, 1, &var_child, &pcObtained);
-                    if( var_child.vt==VT_DISPATCH )
+                    for(int i=0; i<childCount; i++)
                     {
-                        IDispatch* dispatch = var_child.pdispVal;
-                        IAccessible* child = NULL;
-                        if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
+                        if( varChildren[i].vt==VT_DISPATCH )
                         {
-                            VARIANT self;
-                            self.vt = VT_I4;
-                            self.lVal = CHILDID_SELF;
-
-                            BSTR bstrName = NULL;
-                            if( S_OK == child->get_accHelp(self, &bstrName) )
+                            IDispatch* dispatch = varChildren[i].pdispVal;
+                            IAccessible* child = NULL;
+                            if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
                             {
-                                if(wcscmp(bstrName, L"Tab")==0)
-                                {
-                                    RECT rect;
-                                    if( S_OK == child->accLocation(&rect.left, &rect.top, &rect.right, &rect.bottom, self))
-                                    {
-                                        rect.right += rect.left;
-                                        rect.bottom += rect.top;
+                                VARIANT self;
+                                self.vt = VT_I4;
+                                self.lVal = CHILDID_SELF;
 
-                                        if(PtInRect(&rect, pt))
+                                BSTR bstrName = NULL;
+                                if( S_OK == child->get_accHelp(self, &bstrName) )
+                                {
+                                    if(wcscmp(bstrName, L"Tab")==0)
+                                    {
+                                        RECT rect;
+                                        if( S_OK == child->accLocation(&rect.left, &rect.top, &rect.right, &rect.bottom, self))
                                         {
-                                            flag = true;
+                                            rect.right += rect.left;
+                                            rect.bottom += rect.top;
+
+                                            if(PtInRect(&rect, pt))
+                                            {
+                                                flag = true;
+                                            }
                                         }
                                     }
+                                    SysFreeString(bstrName);
                                 }
-                                SysFreeString(bstrName);
+                                child->Release();
                             }
-                            child->Release();
+                            dispatch->Release();
                         }
-                        dispatch->Release();
                     }
                 }
+                free(varChildren);
             }
             TabStrip->Release();
         }
@@ -276,41 +280,43 @@ bool IsOnlyOneTab(IAccessible* top)
         if(TabStrip)
         {
             long tab_count = 0;;
-            long count = 0;
-            if( S_OK == TabStrip->get_accChildCount(&count) )
+            long childCount = 0;
+            if( S_OK == TabStrip->get_accChildCount(&childCount) && childCount )
             {
-                for(int i=0; i<count; i++)
+                VARIANT* varChildren = (VARIANT*)malloc(sizeof(VARIANT) * childCount);
+                if( S_OK == AccessibleChildren(TabStrip, 0, childCount, varChildren, &childCount) )
                 {
-                    VARIANT var_child = {0};
-                    LONG pcObtained;
-                    AccessibleChildren(TabStrip, i, 1, &var_child, &pcObtained);
-                    if( var_child.vt==VT_DISPATCH )
+                    for(int i=0; i<childCount; i++)
                     {
-                        IDispatch* dispatch = var_child.pdispVal;
-                        IAccessible* child = NULL;
-                        if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
+                        if( varChildren[i].vt==VT_DISPATCH )
                         {
-                            VARIANT self;
-                            self.vt = VT_I4;
-                            self.lVal = CHILDID_SELF;
-
-                            BSTR bstrName = NULL;
-                            if( S_OK == child->get_accHelp(self, &bstrName) )
+                            IDispatch* dispatch = varChildren[i].pdispVal;
+                            IAccessible* child = NULL;
+                            if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
                             {
-                                if(wcscmp(bstrName, L"Tab")==0)
+                                VARIANT self;
+                                self.vt = VT_I4;
+                                self.lVal = CHILDID_SELF;
+
+                                BSTR bstrName = NULL;
+                                if( S_OK == child->get_accHelp(self, &bstrName) )
                                 {
-                                    tab_count++;
+                                    if(wcscmp(bstrName, L"Tab")==0)
+                                    {
+                                        tab_count++;
+                                    }
+                                    SysFreeString(bstrName);
                                 }
-                                SysFreeString(bstrName);
+                                child->Release();
                             }
-                            child->Release();
+                            dispatch->Release();
                         }
-                        dispatch->Release();
                     }
                 }
-                return tab_count<=1;
+                free(varChildren);
             }
             TabStrip->Release();
+            return tab_count<=1;
         }
     }
     return false;
@@ -325,48 +331,50 @@ bool IsOnOneBookmark(IAccessible* top, POINT pt)
         IAccessible *BookmarkBarView = FindChildElement(top, false, L"BookmarkBarView");
         if(BookmarkBarView)
         {
-            long count = 0;
-            if( S_OK == BookmarkBarView->get_accChildCount(&count) )
+            long childCount = 0;
+            if( S_OK == BookmarkBarView->get_accChildCount(&childCount) && childCount)
             {
-                for(int i=0; i<count; i++)
+                VARIANT* varChildren = (VARIANT*)malloc(sizeof(VARIANT) * childCount);
+                if( S_OK == AccessibleChildren(BookmarkBarView, 0, childCount, varChildren, &childCount) )
                 {
-                    VARIANT var_child = {0};
-                    LONG pcObtained;
-                    AccessibleChildren(BookmarkBarView, i, 1, &var_child, &pcObtained);
-                    if( var_child.vt==VT_DISPATCH )
+                    for(int i=0; i<childCount; i++)
                     {
-                        IDispatch* dispatch = var_child.pdispVal;
-                        IAccessible* child = NULL;
-                        if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
+                        if( varChildren[i].vt==VT_DISPATCH )
                         {
-                            VARIANT self;
-                            self.vt = VT_I4;
-                            self.lVal = CHILDID_SELF;
-
-                            BSTR bstrName = NULL;
-                            if( S_OK == child->get_accHelp(self, &bstrName) )
+                            IDispatch* dispatch = varChildren[i].pdispVal;
+                            IAccessible* child = NULL;
+                            if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
                             {
-                                if(wcscmp(bstrName, L"BookmarkButton")==0)
-                                {
-                                    RECT rect;
-                                    if( S_OK == child->accLocation(&rect.left, &rect.top, &rect.right, &rect.bottom, self))
-                                    {
-                                        rect.right += rect.left;
-                                        rect.bottom += rect.top;
+                                VARIANT self;
+                                self.vt = VT_I4;
+                                self.lVal = CHILDID_SELF;
 
-                                        if(PtInRect(&rect, pt))
+                                BSTR bstrName = NULL;
+                                if( S_OK == child->get_accHelp(self, &bstrName) )
+                                {
+                                    if(wcscmp(bstrName, L"BookmarkButton")==0)
+                                    {
+                                        RECT rect;
+                                        if( S_OK == child->accLocation(&rect.left, &rect.top, &rect.right, &rect.bottom, self))
                                         {
-                                            flag = true;
+                                            rect.right += rect.left;
+                                            rect.bottom += rect.top;
+
+                                            if(PtInRect(&rect, pt))
+                                            {
+                                                flag = true;
+                                            }
                                         }
                                     }
+                                    SysFreeString(bstrName);
                                 }
-                                SysFreeString(bstrName);
+                                child->Release();
                             }
-                            child->Release();
+                            dispatch->Release();
                         }
-                        dispatch->Release();
                     }
                 }
+                free(varChildren);
             }
             BookmarkBarView->Release();
         }

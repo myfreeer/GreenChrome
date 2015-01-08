@@ -500,7 +500,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 
         if(TopContainerView)
         {
-            //TopContainerView->Release();
+            TopContainerView->Release();
         }
     }
 
@@ -549,7 +549,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
             if(TopContainerView)
             {
-                //TopContainerView->Release();
+                TopContainerView->Release();
             }
         }
     }

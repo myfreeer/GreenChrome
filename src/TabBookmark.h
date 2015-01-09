@@ -7,6 +7,7 @@ bool FastTabSwitch1 = false;
 bool FastTabSwitch2 = false;
 bool BookMarkNewTab = false;
 bool OpenUrlNewTab = false;
+bool NotBlankTab = false;
 
 typedef struct tagMOUSEHOOKSTRUCTEX
 {
@@ -106,13 +107,92 @@ BrowserView
         BookmarkButton
 */
 
-IAccessible* FindChildElement(IAccessible *parent, bool aoto_release, const wchar_t *name)
+template<typename Function>
+void GetAccessibleName(IAccessible *node, Function f)
+{
+    VARIANT self;
+    self.vt = VT_I4;
+    self.lVal = CHILDID_SELF;
+
+    BSTR bstr = NULL;
+    if( S_OK == node->get_accHelp(self, &bstr) )
+    {
+        f(bstr);
+        SysFreeString(bstr);
+    }
+}
+
+template<typename Function>
+void GetAccessibleTitle(IAccessible *node, Function f)
+{
+    VARIANT self;
+    self.vt = VT_I4;
+    self.lVal = CHILDID_SELF;
+
+    BSTR bstr = NULL;
+    if( S_OK == node->get_accName(self, &bstr) )
+    {
+        f(bstr);
+        SysFreeString(bstr);
+    }
+}
+
+template<typename Function>
+void GetAccessibleValue(IAccessible *node, Function f)
+{
+    VARIANT self;
+    self.vt = VT_I4;
+    self.lVal = CHILDID_SELF;
+
+    BSTR bstr = NULL;
+    if( S_OK == node->get_accValue(self, &bstr) )
+    {
+        f(bstr);
+        SysFreeString(bstr);
+    }
+}
+
+template<typename Function>
+void GetAccessibleSize(IAccessible *node, Function f)
+{
+    VARIANT self;
+    self.vt = VT_I4;
+    self.lVal = CHILDID_SELF;
+
+    RECT rect;
+    if( S_OK == node->accLocation(&rect.left, &rect.top, &rect.right, &rect.bottom, self) )
+    {
+        rect.right += rect.left;
+        rect.bottom += rect.top;
+        f(rect);
+    }
+}
+
+long GetAccessibleState(IAccessible *node)
+{
+    VARIANT self;
+    self.vt = VT_I4;
+    self.lVal = CHILDID_SELF;
+
+    VARIANT state;
+    if( S_OK == node->get_accState(self, &state) )
+    {
+        if (state.vt == VT_I4)
+        {
+            return state.lVal;
+        }
+    }
+    return 0;
+}
+
+template<typename Function>
+void TraversalAccessible(IAccessible *node, Function f)
 {
     long childCount = 0;
-    if( S_OK == parent->get_accChildCount(&childCount) && childCount)
+    if( S_OK == node->get_accChildCount(&childCount) && childCount)
     {
         VARIANT* varChildren = (VARIANT*)malloc(sizeof(VARIANT) * childCount);
-        if( S_OK == AccessibleChildren(parent, 0, childCount, varChildren, &childCount) )
+        if( S_OK == AccessibleChildren(node, 0, childCount, varChildren, &childCount) )
         {
             for(int i=0;i<childCount;i++)
             {
@@ -122,23 +202,15 @@ IAccessible* FindChildElement(IAccessible *parent, bool aoto_release, const wcha
                     IAccessible* child = NULL;
                     if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
                     {
-                        VARIANT self;
-                        self.vt = VT_I4;
-                        self.lVal = CHILDID_SELF;
-
-                        BSTR bstrName = NULL;
-                        if( S_OK == child->get_accHelp(self, &bstrName) )
+                        if( (GetAccessibleState(child) & STATE_SYSTEM_INVISIBLE) == 0)//可见
                         {
-                            if(wcscmp(bstrName, name)==0)
+                            if(f(child))
                             {
-                                SysFreeString(bstrName);
                                 dispatch->Release();
-                                if(aoto_release) parent->Release();
-                                return child;
+                                break;
                             }
-                            SysFreeString(bstrName);
+                            child->Release();
                         }
-                        child->Release();
                     }
                     dispatch->Release();
                 }
@@ -146,8 +218,27 @@ IAccessible* FindChildElement(IAccessible *parent, bool aoto_release, const wcha
         }
         free(varChildren);
     }
-    if(aoto_release) parent->Release();
-    return NULL;
+}
+
+IAccessible* FindChildElement(IAccessible *parent, bool aoto_release, const wchar_t *name)
+{
+    IAccessible* element = NULL;
+    if(parent)
+    {
+        TraversalAccessible(parent, [&element, &name]
+            (IAccessible* child){
+                GetAccessibleName(child, [&element, &child, &name]
+                    (BSTR bstr){
+                        if(wcscmp(bstr, name)==0)
+                        {
+                            element = child;
+                        }
+                });
+                return element!=NULL;
+            });
+        if(aoto_release) parent->Release();
+    }
+    return element;
 }
 
 IAccessible* FindTopContainerView(IAccessible *top)
@@ -185,27 +276,17 @@ IAccessible* GetTopContainerView(HWND hwnd)
 bool IsOnTheTab(IAccessible* top, POINT pt)
 {
     bool flag = false;
-    if(top)
+    IAccessible *TabStrip = FindChildElement(top, false, L"TabStrip");
+    if(TabStrip)
     {
-        IAccessible *TabStrip = FindChildElement(top, false, L"TabStrip");
-        if(TabStrip)
-        {
-            VARIANT self;
-            self.vt = VT_I4;
-            self.lVal = CHILDID_SELF;
-            RECT rect;
-            if( S_OK == TabStrip->accLocation(&rect.left, &rect.top, &rect.right, &rect.bottom, self))
-            {
-                rect.right += rect.left;
-                rect.bottom += rect.top;
-
+        GetAccessibleSize(TabStrip, [&flag, &pt]
+            (RECT rect){
                 if(PtInRect(&rect, pt))
                 {
                     flag = true;
                 }
-            }
-            TabStrip->Release();
-        }
+        });
+        TabStrip->Release();
     }
     return flag;
 }
@@ -214,59 +295,28 @@ bool IsOnTheTab(IAccessible* top, POINT pt)
 bool IsOnOneTab(IAccessible* top, POINT pt)
 {
     bool flag = false;
-    if(top)
+    IAccessible *TabStrip = FindChildElement(top, false, L"TabStrip");
+    if(TabStrip)
     {
-        IAccessible *TabStrip = FindChildElement(top, false, L"TabStrip");
-        if(TabStrip)
-        {
-            long childCount = 0;
-            if( S_OK == TabStrip->get_accChildCount(&childCount) && childCount)
-            {
-                VARIANT* varChildren = (VARIANT*)malloc(sizeof(VARIANT) * childCount);
-                if( S_OK == AccessibleChildren(TabStrip, 0, childCount, varChildren, &childCount) )
-                {
-                    for(int i=0; i<childCount; i++)
-                    {
-                        if( varChildren[i].vt==VT_DISPATCH )
+        TraversalAccessible(TabStrip, [&flag, &pt]
+            (IAccessible* child){
+                GetAccessibleName(child, [&flag, &pt, &child]
+                    (BSTR bstr){
+                        if(wcscmp(bstr, L"Tab")==0)
                         {
-                            IDispatch* dispatch = varChildren[i].pdispVal;
-                            IAccessible* child = NULL;
-                            if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
-                            {
-                                VARIANT self;
-                                self.vt = VT_I4;
-                                self.lVal = CHILDID_SELF;
-
-                                BSTR bstrName = NULL;
-                                if( S_OK == child->get_accHelp(self, &bstrName) )
-                                {
-                                    if(wcscmp(bstrName, L"Tab")==0)
+                            GetAccessibleSize(child, [&flag, &pt]
+                                (RECT rect){
+                                    if(PtInRect(&rect, pt))
                                     {
-                                        RECT rect;
-                                        if( S_OK == child->accLocation(&rect.left, &rect.top, &rect.right, &rect.bottom, self))
-                                        {
-                                            rect.right += rect.left;
-                                            rect.bottom += rect.top;
-
-                                            if(PtInRect(&rect, pt))
-                                            {
-                                                flag = true;
-                                            }
-                                        }
+                                        flag = true;
                                     }
-                                    SysFreeString(bstrName);
-                                }
-                                child->Release();
-                            }
-                            dispatch->Release();
+                                });
                         }
-                    }
-                }
-                free(varChildren);
-            }
-            TabStrip->Release();
-        }
-
+                });
+                if(flag) child->Release();
+                return flag;
+            });
+        TabStrip->Release();
     }
     return flag;
 }
@@ -274,50 +324,23 @@ bool IsOnOneTab(IAccessible* top, POINT pt)
 //是否只有一个标签
 bool IsOnlyOneTab(IAccessible* top)
 {
-    if(top)
+    IAccessible *TabStrip = FindChildElement(top, false, L"TabStrip");
+    if(TabStrip)
     {
-        IAccessible *TabStrip = FindChildElement(top, false, L"TabStrip");
-        if(TabStrip)
-        {
-            long tab_count = 0;;
-            long childCount = 0;
-            if( S_OK == TabStrip->get_accChildCount(&childCount) && childCount )
-            {
-                VARIANT* varChildren = (VARIANT*)malloc(sizeof(VARIANT) * childCount);
-                if( S_OK == AccessibleChildren(TabStrip, 0, childCount, varChildren, &childCount) )
-                {
-                    for(int i=0; i<childCount; i++)
-                    {
-                        if( varChildren[i].vt==VT_DISPATCH )
+        long tab_count = 0;
+        TraversalAccessible(TabStrip, [&tab_count]
+            (IAccessible* child){
+                GetAccessibleName(child, [&tab_count]
+                    (BSTR bstr){
+                        if(wcscmp(bstr, L"Tab")==0)
                         {
-                            IDispatch* dispatch = varChildren[i].pdispVal;
-                            IAccessible* child = NULL;
-                            if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
-                            {
-                                VARIANT self;
-                                self.vt = VT_I4;
-                                self.lVal = CHILDID_SELF;
-
-                                BSTR bstrName = NULL;
-                                if( S_OK == child->get_accHelp(self, &bstrName) )
-                                {
-                                    if(wcscmp(bstrName, L"Tab")==0)
-                                    {
-                                        tab_count++;
-                                    }
-                                    SysFreeString(bstrName);
-                                }
-                                child->Release();
-                            }
-                            dispatch->Release();
+                            tab_count++;
                         }
-                    }
-                }
-                free(varChildren);
-            }
-            TabStrip->Release();
-            return tab_count<=1;
-        }
+                });
+                return false;
+            });
+        TabStrip->Release();
+        return tab_count<=1;
     }
     return false;
 }
@@ -329,51 +352,24 @@ bool IsOnOneBookmarkInner(IAccessible* parent, POINT pt)
     IAccessible *BookmarkBarView = FindChildElement(parent, false, L"BookmarkBarView");
     if(BookmarkBarView)
     {
-        long childCount = 0;
-        if( S_OK == BookmarkBarView->get_accChildCount(&childCount) && childCount)
-        {
-            VARIANT* varChildren = (VARIANT*)malloc(sizeof(VARIANT) * childCount);
-            if( S_OK == AccessibleChildren(BookmarkBarView, 0, childCount, varChildren, &childCount) )
-            {
-                for(int i=0; i<childCount; i++)
-                {
-                    if( varChildren[i].vt==VT_DISPATCH )
-                    {
-                        IDispatch* dispatch = varChildren[i].pdispVal;
-                        IAccessible* child = NULL;
-                        if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
+        TraversalAccessible(BookmarkBarView, [&flag, &pt]
+            (IAccessible* child){
+                GetAccessibleName(child, [&flag, &pt, &child]
+                    (BSTR bstr){
+                        if(wcscmp(bstr, L"BookmarkButton")==0)
                         {
-                            VARIANT self;
-                            self.vt = VT_I4;
-                            self.lVal = CHILDID_SELF;
-
-                            BSTR bstrName = NULL;
-                            if( S_OK == child->get_accHelp(self, &bstrName) )
-                            {
-                                if(wcscmp(bstrName, L"BookmarkButton")==0)
-                                {
-                                    RECT rect;
-                                    if( S_OK == child->accLocation(&rect.left, &rect.top, &rect.right, &rect.bottom, self))
+                            GetAccessibleSize(child, [&flag, &pt]
+                                (RECT rect){
+                                    if(PtInRect(&rect, pt))
                                     {
-                                        rect.right += rect.left;
-                                        rect.bottom += rect.top;
-
-                                        if(PtInRect(&rect, pt))
-                                        {
-                                            flag = true;
-                                        }
+                                        flag = true;
                                     }
-                                }
-                                SysFreeString(bstrName);
-                            }
-                            child->Release();
+                                });
                         }
-                        dispatch->Release();
-                    }
-                }
-            }
-            free(varChildren);
-        }
+                });
+                if(flag) child->Release();
+                return flag;
+            });
         BookmarkBarView->Release();
     }
     return flag;
@@ -404,6 +400,57 @@ bool IsOnOneBookmark(IAccessible* top, POINT pt)
     return flag;
 }
 
+//当前激活标签是否是新标签
+bool IsBlankTab(IAccessible* top)
+{
+    bool flag = false;
+    IAccessible *TabStrip = FindChildElement(top, false, L"TabStrip");
+    if(TabStrip)
+    {
+        wchar_t* new_tab_title = NULL;
+        TraversalAccessible(TabStrip, [&new_tab_title]
+            (IAccessible* child){
+                GetAccessibleName(child, [&child, &new_tab_title]
+                    (BSTR bstr){
+                        if(wcscmp(bstr, L"ImageButton")==0)
+                        {
+                            GetAccessibleTitle(child, [&new_tab_title]
+                                (BSTR bstr){
+                                    new_tab_title = wcsdup(bstr);
+                            });
+                        }
+                });
+                return false;
+            });
+        if(new_tab_title)
+        {
+            TraversalAccessible(TabStrip, [&flag, &new_tab_title]
+                (IAccessible* child){
+                    GetAccessibleName(child, [&child, &flag, &new_tab_title]
+                        (BSTR bstr){
+                            if(wcscmp(bstr, L"Tab")==0)
+                            {
+                                if(GetAccessibleState(child) & STATE_SYSTEM_SELECTED)
+                                {
+                                    GetAccessibleTitle(child, [&flag, &new_tab_title]
+                                        (BSTR bstr){
+                                            if(wcscmp(bstr, new_tab_title)==0)
+                                            {
+                                                flag = true;
+                                            }
+                                    });
+                                }
+                            }
+                    });
+                    return false;
+                });
+            free(new_tab_title);
+        }
+        TabStrip->Release();
+    }
+    return flag;
+}
+
 bool IsOmniboxViewFocus(IAccessible* top)
 {
     bool flag = false;
@@ -418,27 +465,16 @@ bool IsOmniboxViewFocus(IAccessible* top)
                 IAccessible *OmniboxViewViews = FindChildElement(LocationBarView, true, L"OmniboxViewViews");
                 if(OmniboxViewViews)
                 {
-                    VARIANT self;
-                    self.vt = VT_I4;
-                    self.lVal = CHILDID_SELF;
-
-                    BSTR bstrName = NULL;
-                    if( S_OK == OmniboxViewViews->get_accValue(self, &bstrName) )
-                    {
-                        if(bstrName[0]!=0)//地址栏不为空
-                        {
-                            VARIANT varRetVal;
-                            OmniboxViewViews->get_accState(self, &varRetVal);
-                            if (varRetVal.vt == VT_I4)
+                    GetAccessibleValue(OmniboxViewViews, [&OmniboxViewViews, &flag]
+                        (BSTR bstr){
+                            if(bstr[0]!=0)//地址栏不为空
                             {
-                                if( (varRetVal.lVal & STATE_SYSTEM_FOCUSED) == STATE_SYSTEM_FOCUSED)
+                                if( (GetAccessibleState(OmniboxViewViews) & STATE_SYSTEM_FOCUSED) == STATE_SYSTEM_FOCUSED)
                                 {
                                     flag = true;
                                 }
                             }
-                        }
-                        SysFreeString(bstrName);
-                    }
+                    });
                     OmniboxViewViews->Release();
                 }
             }
@@ -528,7 +564,10 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 
         if(wParam==WM_LBUTTONUP && BookMarkNewTab && !(GetAsyncKeyState(VK_CONTROL) & KEY_PRESSED) && IsOnOneBookmark(TopContainerView, pmouse->pt) )
         {
-            bookmark_new_tab = true;
+            if(!NotBlankTab || !IsBlankTab(TopContainerView))
+            {
+                bookmark_new_tab = true;
+            }
         }
 
         if(TopContainerView)
@@ -576,7 +615,10 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             IAccessible* TopContainerView = GetTopContainerView(GetForegroundWindow());
             if( !(GetAsyncKeyState(VK_MENU) & KEY_PRESSED) && IsOmniboxViewFocus(TopContainerView) )
             {
-                open_url_ing = true;
+                if(!NotBlankTab || !IsBlankTab(TopContainerView))
+                {
+                    open_url_ing = true;
+                }
             }
 
             if(TopContainerView)
@@ -603,6 +645,7 @@ void TabBookmark(HMODULE hInstance, const wchar_t *iniPath)
     FastTabSwitch2 = GetPrivateProfileInt(L"其它设置", L"快速标签切换2", 0, iniPath)==1;
     BookMarkNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开书签", 0, iniPath)==1;
     OpenUrlNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开网址", 0, iniPath)==1;
+    NotBlankTab = GetPrivateProfileInt(L"其它设置", L"非空白页面生效", 0, iniPath)==1;
 
     if(!wcsstr(GetCommandLineW(), L"--channel"))
     {

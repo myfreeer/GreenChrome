@@ -100,16 +100,19 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
         while (line && *line)
         {
             //OutputDebugStringW(line);
-            STARTUPINFOW si_ = {0};
-            PROCESS_INFORMATION pi_ = {0};
-            si_.cb = sizeof(STARTUPINFO);
 
             ExpandEnvironmentStringsW(line, temp, MAX_SIZE);
             wchar_t *_temp = replace(temp, L"%app%", exePath);
 
-            if (CreateProcessW(NULL, _temp, NULL, NULL, false, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | CREATE_DEFAULT_ERROR_MODE, NULL, 0, &si_, &pi_))
+            SHELLEXECUTEINFO ShExecInfo = {0};
+            ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+            ShExecInfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
+            ShExecInfo.lpFile = _temp;
+            ShExecInfo.nShow = SW_SHOW;
+
+            if (ShellExecuteEx(&ShExecInfo))
             {
-                programs[programs_count] = pi_.hProcess;
+                programs[programs_count] = ShExecInfo.hProcess;
                 programs_count++;
                 if(programs_count>=100) break;
             }

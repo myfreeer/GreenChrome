@@ -9,11 +9,13 @@ bool BookMarkNewTab = false;
 bool OpenUrlNewTab = false;
 bool NotBlankTab = false;
 
+#ifndef _WIN64
 typedef struct tagMOUSEHOOKSTRUCTEX
 {
     MOUSEHOOKSTRUCT ignore;
     DWORD           mouseData;
 } MOUSEHOOKSTRUCTEX, *PMOUSEHOOKSTRUCTEX, *LPMOUSEHOOKSTRUCTEX;
+#endif
 
 #define KEY_PRESSED 0x8000
 

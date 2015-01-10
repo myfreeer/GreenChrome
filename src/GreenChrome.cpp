@@ -125,6 +125,26 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
 
         //老板键
         Bosskey(iniPath);
+
+        //检查更新
+        wchar_t updater[MAX_PATH];
+        GetPrivateProfileString(L"自动更新", L"更新器地址", L"", updater, MAX_PATH, iniPath);
+        if(updater[0])
+        {
+            wchar_t check_version[MAX_PATH];
+            GetPrivateProfileString(L"自动更新", L"检查版本", L"", check_version, MAX_PATH, iniPath);
+            wchar_t parameters[1024];
+            wsprintf(parameters, L"\"%s\" %s", exePath, check_version);
+
+            SHELLEXECUTEINFO ShExecInfo = {0};
+            ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+            ShExecInfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
+            ShExecInfo.lpFile = updater;
+            ShExecInfo.lpParameters = parameters;
+            ShExecInfo.nShow = SW_SHOW;
+
+            ShellExecuteEx(&ShExecInfo);
+        }
     }
 
 	//启动进程
@@ -174,19 +194,9 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
 	free(MyCommandLine);
 }
 
-void GreenChrome()
+EXPORT ReleaseIni(const wchar_t *exePath, wchar_t *iniPath)
 {
-	//exe全路径
-	wchar_t fullPath[MAX_PATH];
-	GetModuleFileNameW(NULL, fullPath, MAX_PATH);
-
-	//exe所在路径
-	wchar_t exePath[MAX_PATH];
-	wcscpy(exePath, fullPath);
-	PathRemoveFileSpecW(exePath);
-
 	//ini路径
-	wchar_t iniPath[MAX_PATH];
 	wcscpy(iniPath, exePath);
 	wcscat(iniPath, L"\\GreenChrome.ini");
 
@@ -200,6 +210,22 @@ void GreenChrome()
 			fclose(fp);
 		}
 	}
+}
+
+void GreenChrome()
+{
+	//exe全路径
+	wchar_t fullPath[MAX_PATH];
+	GetModuleFileNameW(NULL, fullPath, MAX_PATH);
+
+	//exe路径
+	wchar_t exePath[MAX_PATH];
+	wcscpy(exePath, fullPath);
+	PathRemoveFileSpecW(exePath);
+
+	//生成默认ini文件
+	wchar_t iniPath[MAX_PATH];
+	ReleaseIni(exePath, iniPath);
 
 	//自动给任务栏pin的快捷方式加上只读属性
 	AutoLockLnk(fullPath);

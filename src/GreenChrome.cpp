@@ -91,7 +91,7 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
 
     HANDLE programs[100]; //最多100个外部程序句柄，够用了
     int programs_count = 0; //外部程序数量
-
+    bool Bosskey_start = false;
     if(first_dll)
     {
         wchar_t *temp = (wchar_t *)malloc(MAX_SIZE);
@@ -124,7 +124,7 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
         free(temp);
 
         //老板键
-        Bosskey(iniPath);
+        Bosskey_start = Bosskey(iniPath);
 
         //检查更新
         wchar_t updater[MAX_PATH];
@@ -162,7 +162,7 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
     //OutputDebugStringW(MyCommandLine);
     if (CreateProcessW(fullPath, MyCommandLine, NULL, NULL, false, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | CREATE_DEFAULT_ERROR_MODE, NULL, 0, &si, &pi))
     {
-        if(first_dll && (StartProgram[0] || CloseProgram[0]))
+        if(first_dll && (StartProgram[0] || CloseProgram[0] || Bosskey_start))
         {
             //启动了外部程序时，首个进程不立刻退出，需要检测Chrome的关闭，然后杀掉外部程序
             //需要结束外部程序，也需要等待处理

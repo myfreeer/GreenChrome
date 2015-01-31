@@ -60,7 +60,7 @@ void HotKeyRegister(PVOID pvoid)
         DispatchMessage(&msg);
     }
 }
-void Bosskey(const wchar_t *iniPath)
+bool Bosskey(const wchar_t *iniPath)
 {
     wchar_t keys[256];
     GetPrivateProfileString(L"其它设置", L"老板键", L"", keys, 256, iniPath);
@@ -69,4 +69,5 @@ void Bosskey(const wchar_t *iniPath)
         UINT flag = ParseHotkeys(keys);
         _beginthread(HotKeyRegister,0,(LPVOID)flag);
     }
+    return keys[0];
 }

@@ -109,25 +109,8 @@ BrowserView
         BookmarkButton
 */
 
-/*
 template<typename Function>
 void GetAccessibleName(IAccessible *node, Function f)
-{
-    VARIANT self;
-    self.vt = VT_I4;
-    self.lVal = CHILDID_SELF;
-
-    BSTR bstr = NULL;
-    if( S_OK == node->get_accHelp(self, &bstr) )
-    {
-        f(bstr);
-        SysFreeString(bstr);
-    }
-}
-*/
-
-template<typename Function>
-void GetAccessibleTitle(IAccessible *node, Function f)
 {
     VARIANT self;
     self.vt = VT_I4;
@@ -240,30 +223,7 @@ void TraversalAccessible(IAccessible *node, Function f)
         free(varChildren);
     }
 }
-/*
-IAccessible* FindChildElement(IAccessible *parent, bool aoto_release, const wchar_t *name)
-{
-    IAccessible* element = NULL;
-    if(parent)
-    {
-        TraversalAccessible(parent, [&element, &name]
-            (IAccessible* child){
-                GetAccessibleName(child, [&element, &child, &name]
-                    (BSTR bstr){
-                        if(wcscmp(bstr, name)==0)
-                        {
-                            //TODO
-                            OutputDebugStringW(bstr);
-                            element = child;
-                        }
-                });
-                return element!=NULL;
-            });
-        if(aoto_release) parent->Release();
-    }
-    return element;
-}
-*/
+
 IAccessible* GetChildElement(IAccessible *parent, bool aoto_release, int n)
 {
     IAccessible* element = NULL;
@@ -434,7 +394,7 @@ bool IsOnOneBookmark(IAccessible* top, POINT pt)
     if(top)
     {
         //开启了书签栏长显
-        if(IsOnOneBookmarkInner(top, pt, 3)) return true;
+        if(IsOnOneBookmarkInner(top, pt, 2)) return true;
 
         //未开启书签栏长显
         IDispatch* dispatch = NULL;
@@ -443,7 +403,7 @@ bool IsOnOneBookmark(IAccessible* top, POINT pt)
             IAccessible* parent = NULL;
             if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&parent))
             {
-                flag = IsOnOneBookmarkInner(parent, pt, 2);
+                flag = IsOnOneBookmarkInner(parent, pt, 1);
                 parent->Release();
             }
             dispatch->Release();
@@ -464,7 +424,7 @@ bool IsBlankTab(IAccessible* top)
             (IAccessible* child){
                 if(GetAccessibleRole(child)==ROLE_SYSTEM_PUSHBUTTON)
                 {
-                    GetAccessibleTitle(child, [&new_tab_title]
+                    GetAccessibleName(child, [&new_tab_title]
                         (BSTR bstr){
                             new_tab_title = wcsdup(bstr);
                     });
@@ -475,22 +435,16 @@ bool IsBlankTab(IAccessible* top)
         {
             TraversalAccessible(TabStrip, [&flag, &new_tab_title]
                 (IAccessible* child){
-                    GetAccessibleTitle(child, [&child, &flag, &new_tab_title]
-                        (BSTR bstr){
-                            if(wcscmp(bstr, L"Tab")==0)
-                            {
-                                if(GetAccessibleState(child) & STATE_SYSTEM_SELECTED)
+                    if(GetAccessibleState(child) & STATE_SYSTEM_SELECTED)
+                    {
+                        GetAccessibleName(child, [&flag, &new_tab_title]
+                            (BSTR bstr){
+                                if(wcscmp(bstr, new_tab_title)==0)
                                 {
-                                    GetAccessibleTitle(child, [&flag, &new_tab_title]
-                                        (BSTR bstr){
-                                            if(wcscmp(bstr, new_tab_title)==0)
-                                            {
-                                                flag = true;
-                                            }
-                                    });
+                                    flag = true;
                                 }
-                            }
-                    });
+                        });
+                    }
                     return false;
                 });
             free(new_tab_title);
@@ -508,10 +462,10 @@ bool IsOmniboxViewFocus(IAccessible* top)
         IAccessible *ToolbarView = GetChildElement(top, false, 1);
         if(ToolbarView)
         {
-            IAccessible *LocationBarView = GetChildElement(top, true, 3);
+            IAccessible *LocationBarView = GetChildElement(ToolbarView, true, 3);
             if(LocationBarView)
             {
-                IAccessible *OmniboxViewViews = GetChildElement(top, true, 1);
+                IAccessible *OmniboxViewViews = GetChildElement(LocationBarView, true, 1);
                 if(OmniboxViewViews)
                 {
                     GetAccessibleValue(OmniboxViewViews, [&OmniboxViewViews, &flag]
@@ -527,7 +481,6 @@ bool IsOmniboxViewFocus(IAccessible* top)
                     OmniboxViewViews->Release();
                 }
             }
-
         }
     }
     return flag;
@@ -547,7 +500,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
     {
         PMOUSEHOOKSTRUCT pmouse = (PMOUSEHOOKSTRUCT) lParam;
 
-        if(wParam==WM_MOUSEMOVE)
+        if(wParam==WM_MOUSEMOVE || wParam==WM_NCMOUSEMOVE)
         {
             return CallNextHookEx(mouse_hook, nCode, wParam, lParam );;
         }

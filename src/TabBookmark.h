@@ -1,5 +1,3 @@
-
-
 bool DoubleClickCloseTab = false;
 bool RightClickCloseTab = false;
 bool KeepLastTab = false;
@@ -19,7 +17,7 @@ typedef struct tagMOUSEHOOKSTRUCTEX
 
 #define KEY_PRESSED 0x8000
 
-
+// 发送中键，关闭标签或者在新标签打开书签
 void SendMiddleClick()
 {
     INPUT input[1];
@@ -34,6 +32,7 @@ void SendMiddleClick()
     SendInput(1, input, sizeof(INPUT));
 }
 
+// 打开新标签页，发送ctrl+t
 void OpenNewTab()
 {
     INPUT input[2];
@@ -54,6 +53,7 @@ void OpenNewTab()
     SendInput(2, input, sizeof(INPUT));
 }
 
+// 切换标签页，发送ctrl+pagedown/pageup
 void SwitchTab(int zDelta)
 {
     INPUT input[2];
@@ -74,6 +74,7 @@ void SwitchTab(int zDelta)
     SendInput(2, input, sizeof(INPUT));
 }
 
+// 在新标签打开url，发送alt+enter
 void OpenNewUrlTab()
 {
     INPUT input[2];
@@ -94,6 +95,9 @@ void OpenNewUrlTab()
     SendInput(2, input, sizeof(INPUT));
 }
 /*
+chrome ui tree
+
+
 browser/ui/views/frame/BrowserRootView
 ui/views/window/NonClientView
 BrowserView
@@ -206,7 +210,7 @@ void TraversalAccessible(IAccessible *node, Function f)
                     IAccessible* child = NULL;
                     if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&child))
                     {
-                        if( (GetAccessibleState(child) & STATE_SYSTEM_INVISIBLE) == 0)//可见
+                        if( (GetAccessibleState(child) & STATE_SYSTEM_INVISIBLE) == 0) // 只遍历可见节点
                         {
                             if(f(child))
                             {
@@ -244,16 +248,27 @@ IAccessible* GetChildElement(IAccessible *parent, bool aoto_release, int n)
     return element;
 }
 
+bool CheckAccessibleRole(IAccessible* node, long role)
+{
+    if(node)
+    {
+        if(GetAccessibleRole(node)==role) return true;
+        node->Release();
+    }
+
+    return false;
+}
+
 IAccessible* FindTopContainerView(IAccessible *top)
 {
     top = GetChildElement(top, true, 2);
-    if(!top || GetAccessibleRole(top)!=ROLE_SYSTEM_WINDOW) return NULL;
+    if(!CheckAccessibleRole(top, ROLE_SYSTEM_WINDOW)) return NULL;
 
     top = GetChildElement(top, true, 0);
-    if(!top || GetAccessibleRole(top)!=ROLE_SYSTEM_CLIENT) return NULL;
+    if(!CheckAccessibleRole(top, ROLE_SYSTEM_CLIENT)) return NULL;
 
     top = GetChildElement(top, true, 1);
-    if(!top || GetAccessibleRole(top)!=ROLE_SYSTEM_CLIENT) return NULL;
+    if(!CheckAccessibleRole(top, ROLE_SYSTEM_CLIENT)) return NULL;
 
     IAccessible *BookMark = GetChildElement(top, false, 1);
     if(BookMark)
@@ -268,7 +283,12 @@ IAccessible* FindTopContainerView(IAccessible *top)
         }
         BookMark->Release();
 
-        if(!top || GetAccessibleRole(top)!=ROLE_SYSTEM_CLIENT) return NULL;
+        if(!CheckAccessibleRole(top, ROLE_SYSTEM_CLIENT)) return NULL;
+    }
+    else
+    {
+        top->Release();
+        return NULL;
     }
 
     return top;
@@ -277,9 +297,8 @@ IAccessible* FindTopContainerView(IAccessible *top)
 IAccessible* GetTopContainerView(HWND hwnd)
 {
     IAccessible *TopContainerView = NULL;
-    wchar_t name[256];
-    GetClassName(hwnd, name, 256);
-    if(wcscmp(name, L"Chrome_WidgetWin_1")==0)
+    wchar_t name[MAX_PATH];
+    if(GetClassName(hwnd, name, MAX_PATH) && wcscmp(name, L"Chrome_WidgetWin_1")==0)
     {
         IAccessible *paccMainWindow = NULL;
         if ( S_OK == AccessibleObjectFromWindow(hwnd, OBJID_WINDOW, IID_IAccessible, (void**)&paccMainWindow) )
@@ -290,12 +309,12 @@ IAccessible* GetTopContainerView(HWND hwnd)
     return TopContainerView;
 }
 
-//鼠标是否在标签栏上
+// 鼠标是否在标签栏上
 bool IsOnTheTab(IAccessible* top, POINT pt)
 {
     bool flag = false;
     IAccessible *TabStrip = GetChildElement(top, false, 0);
-    if(TabStrip)
+    if(CheckAccessibleRole(TabStrip, ROLE_SYSTEM_PAGETABLIST))
     {
         GetAccessibleSize(TabStrip, [&flag, &pt]
             (RECT rect){
@@ -309,12 +328,12 @@ bool IsOnTheTab(IAccessible* top, POINT pt)
     return flag;
 }
 
-//鼠标是否在某个标签上
+// 鼠标是否在某个标签上
 bool IsOnOneTab(IAccessible* top, POINT pt)
 {
     bool flag = false;
     IAccessible *TabStrip = GetChildElement(top, false, 0);
-    if(TabStrip)
+    if(CheckAccessibleRole(TabStrip, ROLE_SYSTEM_PAGETABLIST))
     {
         TraversalAccessible(TabStrip, [&flag, &pt]
             (IAccessible* child){
@@ -336,11 +355,11 @@ bool IsOnOneTab(IAccessible* top, POINT pt)
     return flag;
 }
 
-//是否只有一个标签
+// 是否只有一个标签
 bool IsOnlyOneTab(IAccessible* top)
 {
     IAccessible *TabStrip = GetChildElement(top, false, 0);
-    if(TabStrip)
+    if(CheckAccessibleRole(TabStrip, ROLE_SYSTEM_PAGETABLIST))
     {
         long tab_count = 0;
         TraversalAccessible(TabStrip, [&tab_count]
@@ -362,41 +381,38 @@ bool IsOnOneBookmarkInner(IAccessible* parent, POINT pt, int n)
 {
     bool flag = false;
     IAccessible *BookmarkBarView = GetChildElement(parent, false, n);
-    if(BookmarkBarView)
+    if(CheckAccessibleRole(BookmarkBarView, ROLE_SYSTEM_TOOLBAR))
     {
-        if(GetAccessibleRole(BookmarkBarView)==ROLE_SYSTEM_TOOLBAR)
-        {
-            TraversalAccessible(BookmarkBarView, [&flag, &pt]
-                (IAccessible* child){
-                    if(GetAccessibleRole(child)==ROLE_SYSTEM_PUSHBUTTON)
-                    {
-                        GetAccessibleSize(child, [&flag, &pt]
-                            (RECT rect){
-                                if(PtInRect(&rect, pt))
-                                {
-                                    flag = true;
-                                }
-                            });
-                    }
-                    if(flag) child->Release();
-                    return flag;
-                });
-        }
+        TraversalAccessible(BookmarkBarView, [&flag, &pt]
+            (IAccessible* child){
+                if(GetAccessibleRole(child)==ROLE_SYSTEM_PUSHBUTTON)
+                {
+                    GetAccessibleSize(child, [&flag, &pt]
+                        (RECT rect){
+                            if(PtInRect(&rect, pt))
+                            {
+                                flag = true;
+                            }
+                        });
+                }
+                if(flag) child->Release();
+                return flag;
+            });
         BookmarkBarView->Release();
     }
     return flag;
 }
 
-//是否点击书签栏
+// 是否点击书签栏
 bool IsOnOneBookmark(IAccessible* top, POINT pt)
 {
     bool flag = false;
     if(top)
     {
-        //开启了书签栏长显
+        // 开启了书签栏长显
         if(IsOnOneBookmarkInner(top, pt, 2)) return true;
 
-        //未开启书签栏长显
+        // 未开启书签栏长显
         IDispatch* dispatch = NULL;
         if( S_OK == top->get_accParent(&dispatch) && dispatch)
         {
@@ -412,12 +428,12 @@ bool IsOnOneBookmark(IAccessible* top, POINT pt)
     return flag;
 }
 
-//当前激活标签是否是新标签
+// 当前激活标签是否是新标签
 bool IsBlankTab(IAccessible* top)
 {
     bool flag = false;
     IAccessible *TabStrip = GetChildElement(top, false, 0);
-    if(TabStrip)
+    if(CheckAccessibleRole(TabStrip, ROLE_SYSTEM_PAGETABLIST))
     {
         wchar_t* new_tab_title = NULL;
         TraversalAccessible(TabStrip, [&new_tab_title]
@@ -461,18 +477,18 @@ bool IsOmniboxViewFocus(IAccessible* top)
     if(top)
     {
         IAccessible *ToolbarView = GetChildElement(top, false, 1);
-        if(ToolbarView)
+        if(CheckAccessibleRole(ToolbarView, ROLE_SYSTEM_TOOLBAR))
         {
             TraversalAccessible(ToolbarView, [&flag]
                 (IAccessible* child){
                     if(GetAccessibleRole(child)==ROLE_SYSTEM_GROUPING)
                     {
                         IAccessible *OmniboxViewViews = GetChildElement(child, false, 1);
-                        if(OmniboxViewViews)
+                        if(CheckAccessibleRole(OmniboxViewViews, ROLE_SYSTEM_TEXT))
                         {
                             GetAccessibleValue(OmniboxViewViews, [&OmniboxViewViews, &flag]
                                 (BSTR bstr){
-                                    if(bstr[0]!=0)//地址栏不为空
+                                    if(bstr[0]!=0) // 地址栏不为空
                                     {
                                         if( (GetAccessibleState(OmniboxViewViews) & STATE_SYSTEM_FOCUSED) == STATE_SYSTEM_FOCUSED)
                                         {
@@ -645,14 +661,14 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 
 void TabBookmark(HMODULE hInstance, const wchar_t *iniPath)
 {
-    DoubleClickCloseTab = GetPrivateProfileInt(L"其它设置", L"双击关闭标签", 0, iniPath)==1;
-    RightClickCloseTab = GetPrivateProfileInt(L"其它设置", L"右键关闭标签", 0, iniPath)==1;
-    KeepLastTab = GetPrivateProfileInt(L"其它设置", L"保留最后标签", 0, iniPath)==1;
-    FastTabSwitch1 = GetPrivateProfileInt(L"其它设置", L"快速标签切换1", 0, iniPath)==1;
-    FastTabSwitch2 = GetPrivateProfileInt(L"其它设置", L"快速标签切换2", 0, iniPath)==1;
-    BookMarkNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开书签", 0, iniPath)==1;
-    OpenUrlNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开网址", 0, iniPath)==1;
-    NotBlankTab = GetPrivateProfileInt(L"其它设置", L"非空白页面生效", 0, iniPath)==1;
+    DoubleClickCloseTab = GetPrivateProfileInt(L"其它设置", L"双击关闭标签", 1, iniPath)==1;
+    RightClickCloseTab = GetPrivateProfileInt(L"其它设置", L"右键关闭标签", 1, iniPath)==1;
+    KeepLastTab = GetPrivateProfileInt(L"其它设置", L"保留最后标签", 1, iniPath)==1;
+    FastTabSwitch1 = GetPrivateProfileInt(L"其它设置", L"快速标签切换1", 1, iniPath)==1;
+    FastTabSwitch2 = GetPrivateProfileInt(L"其它设置", L"快速标签切换2", 1, iniPath)==1;
+    BookMarkNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开书签", 1, iniPath)==1;
+    OpenUrlNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开网址", 1, iniPath)==1;
+    NotBlankTab = GetPrivateProfileInt(L"其它设置", L"非空白页面生效", 1, iniPath)==1;
 
     if(!wcsstr(GetCommandLineW(), L"--channel"))
     {

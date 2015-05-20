@@ -454,6 +454,7 @@ bool IsBlankTab(IAccessible* top)
     return flag;
 }
 
+// 是否焦点在地址栏
 bool IsOmniboxViewFocus(IAccessible* top)
 {
     bool flag = false;
@@ -462,25 +463,29 @@ bool IsOmniboxViewFocus(IAccessible* top)
         IAccessible *ToolbarView = GetChildElement(top, false, 1);
         if(ToolbarView)
         {
-            IAccessible *LocationBarView = GetChildElement(ToolbarView, true, 3);
-            if(LocationBarView)
-            {
-                IAccessible *OmniboxViewViews = GetChildElement(LocationBarView, true, 1);
-                if(OmniboxViewViews)
-                {
-                    GetAccessibleValue(OmniboxViewViews, [&OmniboxViewViews, &flag]
-                        (BSTR bstr){
-                            if(bstr[0]!=0)//地址栏不为空
-                            {
-                                if( (GetAccessibleState(OmniboxViewViews) & STATE_SYSTEM_FOCUSED) == STATE_SYSTEM_FOCUSED)
-                                {
-                                    flag = true;
-                                }
-                            }
-                    });
-                    OmniboxViewViews->Release();
-                }
-            }
+            TraversalAccessible(ToolbarView, [&flag]
+                (IAccessible* child){
+                    if(GetAccessibleRole(child)==ROLE_SYSTEM_GROUPING)
+                    {
+                        IAccessible *OmniboxViewViews = GetChildElement(child, false, 1);
+                        if(OmniboxViewViews)
+                        {
+                            GetAccessibleValue(OmniboxViewViews, [&OmniboxViewViews, &flag]
+                                (BSTR bstr){
+                                    if(bstr[0]!=0)//地址栏不为空
+                                    {
+                                        if( (GetAccessibleState(OmniboxViewViews) & STATE_SYSTEM_FOCUSED) == STATE_SYSTEM_FOCUSED)
+                                        {
+                                            flag = true;
+                                        }
+                                    }
+                            });
+                            OmniboxViewViews->Release();
+                        }
+                    }
+                    return false;
+                });
+            ToolbarView->Release();
         }
     }
     return flag;

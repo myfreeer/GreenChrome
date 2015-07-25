@@ -73,8 +73,18 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
             }
             free(temp);
         }
+
     }
     LocalFree(szArglist);
+
+    //打开网页
+    if(GetPrivateProfileInt(L"其它设置", L"首次运行", 1, iniPath)==1)
+    {
+        WritePrivateProfileString(L"其它设置", L"首次运行", L"0", iniPath);
+
+        wcscat(MyCommandLine, L" ");
+        AppendPath(MyCommandLine, L"http://www.shuax.com");
+    }
 
     wchar_t StartProgram[MAX_SIZE];
     GetPrivateProfileSectionW(L"启动时运行", StartProgram, MAX_SIZE, iniPath);
@@ -214,13 +224,18 @@ EXPORT ReleaseIni(const wchar_t *exePath, wchar_t *iniPath)
     wcscat(iniPath, L"\\GreenChrome.ini");
 
     //生成默认ini文件
-    if(!PathFileExistsW(iniPath))
+    DWORD attribs = GetFileAttributes(iniPath);
+    if(attribs == INVALID_FILE_ATTRIBUTES || (attribs & FILE_ATTRIBUTE_DIRECTORY) )
     {
         FILE *fp = _wfopen(iniPath, L"wb");
         if(fp)
         {
             fwrite(DefaultConfig, sizeof(DefaultConfig), 1, fp);
             fclose(fp);
+        }
+        else
+        {
+            MessageBox(0, L"无法释放GreenChrome.ini配置文件，当前目录可能不可写！", L"警告", MB_ICONWARNING);
         }
     }
 }
@@ -241,7 +256,23 @@ void GreenChrome()
     ReleaseIni(exePath, iniPath);
 
     //自动给任务栏pin的快捷方式加上只读属性
-    AutoLockLnk(fullPath);
+    //AutoLockLnk(fullPath);
+
+    // 不让chrome使用SetAppIdForWindow
+    HMODULE shell32 = LoadLibrary(L"shell32.dll");
+    if(shell32)
+    {
+        PBYTE SHGetPropertyStoreForWindow = (PBYTE)GetProcAddress(shell32, "SHGetPropertyStoreForWindow");
+        if(SHGetPropertyStoreForWindow)
+        {
+            #ifdef _WIN64
+            BYTE patch[] = {0xB8, 0x01, 0x00, 0x00, 0x00, 0xC3};//return S_FALSE);
+            #else
+            BYTE patch[] = {0xB8, 0x01, 0x00, 0x00, 0x00, 0xC2, 0x0C, 0x00};//return S_FALSE);
+            #endif
+            WriteMemory(SHGetPropertyStoreForWindow, patch, sizeof(patch));
+        }
+    }
 
     //修复Win8上常见的没有注册类错误
     FixNoRegisteredClass();

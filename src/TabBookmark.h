@@ -1,4 +1,4 @@
-bool DoubleClickCloseTab = false;
+﻿bool DoubleClickCloseTab = false;
 bool RightClickCloseTab = false;
 bool KeepLastTab = false;
 bool FastTabSwitch1 = false;
@@ -6,14 +6,6 @@ bool FastTabSwitch2 = false;
 bool BookMarkNewTab = false;
 bool OpenUrlNewTab = false;
 bool NotBlankTab = false;
-
-#ifndef _WIN64
-typedef struct tagMOUSEHOOKSTRUCTEX
-{
-    MOUSEHOOKSTRUCT ignore;
-    DWORD           mouseData;
-} MOUSEHOOKSTRUCTEX, *PMOUSEHOOKSTRUCTEX, *LPMOUSEHOOKSTRUCTEX;
-#endif
 
 #define KEY_PRESSED 0x8000
 
@@ -442,7 +434,7 @@ bool IsBlankTab(IAccessible* top)
                 {
                     GetAccessibleName(child, [&new_tab_title]
                         (BSTR bstr){
-                            new_tab_title = wcsdup(bstr);
+                            new_tab_title = _wcsdup(bstr);
                     });
                 }
                 return false;
@@ -539,7 +531,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             close_tab = true;
         }
 
-        if(wParam==WM_RBUTTONUP && RightClickCloseTab && IsOnOneTab(TopContainerView, pmouse->pt))
+        if(wParam==WM_RBUTTONUP && RightClickCloseTab && !(GetAsyncKeyState(VK_SHIFT) & KEY_PRESSED) && IsOnOneTab(TopContainerView, pmouse->pt))
         {
             close_tab = true;
         }
@@ -659,7 +651,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(keyboard_hook, nCode, wParam, lParam );
 }
 
-void TabBookmark(HMODULE hInstance, const wchar_t *iniPath)
+void TabBookmark(const wchar_t *iniPath)
 {
     DoubleClickCloseTab = GetPrivateProfileInt(L"其它设置", L"双击关闭标签", 1, iniPath)==1;
     RightClickCloseTab = GetPrivateProfileInt(L"其它设置", L"右键关闭标签", 1, iniPath)==1;

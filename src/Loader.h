@@ -69,7 +69,7 @@ bool Write64Jump(PBYTE BaseAddress, MWORD Function, MWORD OldFunction)
 	return WriteMemory(BaseAddress, (PBYTE)&offset, sizeof(offset));
 }
 
-void Loader() { __asm__ (".byte 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90"); }
+void Loader() NOP_FUNC(0)
 
 bool Write32Jump(PBYTE BaseAddress, MWORD Function, MWORD OldFunction)
 {

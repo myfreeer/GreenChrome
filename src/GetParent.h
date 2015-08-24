@@ -20,7 +20,7 @@ DWORD GetParentProcessID()
 
 		if(!status)
 		{
-			return pbi.InheritedFromUniqueProcessId;
+			return (DWORD)pbi.InheritedFromUniqueProcessId;
 		}
 	}
 	return 0;
@@ -41,7 +41,7 @@ void DevicePathToWin32Path(wchar_t *strDevicePath)
 			*szDrive = *p;
 			if (QueryDosDeviceW(szDrive, szName, MAX_PATH))
 			{
-				UINT uNameLen = wcslen(szName);
+				size_t uNameLen = wcslen(szName);
 				if (_wcsnicmp(strDevicePath, szName, uNameLen)==0)
 				{
 					wchar_t szTempFile[MAX_PATH];

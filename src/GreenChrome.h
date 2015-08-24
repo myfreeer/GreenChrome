@@ -4,6 +4,9 @@
 #define WINVER 0x600
 #define _WIN32_IE 0x600
 
+#include <vector>
+#include <string>
+
 #define _MMSYSTEM_H
 #define _INC_MMSYSTEM
 
@@ -26,10 +29,10 @@ typedef uint32_t MWORD;
 
 void GreenChrome();
 
+HMODULE hInstance;
+
 #include "util.h"
 #include "winmm.h"
-#include "DefaultConfig.h"
-#include "ModifyLnk.h"
 #include "GetParent.h"
 #include "Loader.h"
 #include "NoRegisteredClass.h"

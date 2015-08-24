@@ -1,4 +1,4 @@
-/*
+﻿/*
 	char str[] = ",,,1234,,,,,wt";
 	StringSplit(str, ',', []
 		(const char *str)
@@ -35,7 +35,7 @@ void StringSplit(String *str, Char delim, Function f)
 	}
 }
 
-
+#pragma warning(disable: 4996)   
 bool IsSystemWin7()
 {
 	static int result = -1;
@@ -58,7 +58,7 @@ bool IsSystemWin7()
 			result = false;
 		}
 	}
-	return result;
+	return result!=0;
 }
 
 UINT ParseHotkeys(const TCHAR* keys)

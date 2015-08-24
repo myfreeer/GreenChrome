@@ -1,4 +1,4 @@
-
+﻿
 
 bool ReadMemory(PBYTE BaseAddress, PBYTE Buffer, DWORD nSize)
 {
@@ -25,41 +25,39 @@ bool WriteMemory(PBYTE BaseAddress, PBYTE Buffer, DWORD nSize)
 	return false;
 }
 
-wchar_t * replace(wchar_t *source,const wchar_t *sub,const wchar_t *rep)
+#define MAX_SIZE 32767
+
+//如果需要给路径加引号
+inline std::wstring QuotePathIfNeeded(const std::wstring &path)
 {
-	if (0 == source) return _wcsdup(L"");
-	if (0 == *sub) return _wcsdup(source);
+	std::vector<wchar_t> buffer(path.length() + 1 /* null */ + 2 /* quotes */);
+	wcscpy(&buffer[0], path.c_str());
 
-	wchar_t *pc1, *pc2;
-	const wchar_t *pc3;
+	PathQuoteSpaces(&buffer[0]);
 
-	int isub = wcslen(sub);
-	int irep = wcslen(rep);
-	int isource = wcslen(source);
-
-	wchar_t* result = (wchar_t *)malloc(sizeof(wchar_t) * (( irep > isub ? isource / isub * irep : isource ) + 10) );
-	pc1 = result;
-	while (*source != 0)
-	{
-		pc2 = source;
-		pc3 = sub;
-
-		while (*pc2 == *pc3 && *pc3 != 0 && *pc2 != 0)
-			pc2++, pc3++;
-		// 寻找子串
-		if (0 == *pc3)
-		{
-			pc3 = rep;
-			//追加替代串到结果串
-			while (*pc3 != 0)
-				*pc1++ = *pc3++;
-			pc2--;
-			source = pc2;
-		}
-		else
-			*pc1++ = *source;
-		source++;
-	}
-	*pc1 = 0;
-	return result;
+	return std::wstring(&buffer[0]);
 }
+
+//展开环境路径比如 %windir%
+std::wstring ExpandEnvironmentPath(const std::wstring &path)
+{
+	std::vector<wchar_t> buffer(MAX_PATH);
+	size_t expandedLength = ::ExpandEnvironmentStrings(path.c_str(), &buffer[0], buffer.size());
+	if (expandedLength > buffer.size())
+	{
+		buffer.resize(expandedLength);
+		expandedLength = ::ExpandEnvironmentStrings(path.c_str(), &buffer[0], buffer.size());
+	}
+	return std::wstring(&buffer[0], 0, expandedLength);
+}
+
+//替换字符串
+void ReplaceStringInPlace(std::wstring& subject, const std::wstring& search, const std::wstring& replace)
+{
+	size_t pos = 0;
+	while ((pos = subject.find(search, pos)) != std::wstring::npos) {
+		subject.replace(pos, search.length(), replace);
+		pos += replace.length();
+	}
+}
+

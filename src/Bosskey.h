@@ -1,4 +1,4 @@
-#include "Parsekeys.h"
+﻿#include "Parsekeys.h"
 
 static bool is_hide = false;
 
@@ -69,5 +69,5 @@ bool Bosskey(const wchar_t *iniPath)
         UINT flag = ParseHotkeys(keys);
         _beginthread(HotKeyRegister,0,(LPVOID)flag);
     }
-    return keys[0];
+    return keys[0]!='\0';
 }

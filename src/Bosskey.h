@@ -10,9 +10,9 @@ BOOL CALLBACK SearchChromeWindow(HWND hWnd, LPARAM lParam)
     //隐藏
     if(IsWindowVisible(hWnd))
     {
-		TCHAR buff[256];
-		GetClassName(hWnd, buff, 255);
-		if ( wcscmp(buff, L"Chrome_WidgetWin_1")==0 )// || wcscmp(buff, L"Chrome_WidgetWin_2")==0 || wcscmp(buff, L"SysShadow")==0 )
+        TCHAR buff[256];
+        GetClassName(hWnd, buff, 255);
+        if ( wcscmp(buff, L"Chrome_WidgetWin_1")==0 )// || wcscmp(buff, L"Chrome_WidgetWin_2")==0 || wcscmp(buff, L"SysShadow")==0 )
         {
             if(now<100)
             {

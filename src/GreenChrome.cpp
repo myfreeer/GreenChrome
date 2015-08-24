@@ -3,7 +3,7 @@
 //构造新命令行
 void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *fullPath)
 {
-	std::vector <std::wstring> command_line;
+    std::vector <std::wstring> command_line;
 
     int nArgs;
     LPWSTR *szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
@@ -22,25 +22,25 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
             {
                 std::wstring parameter_str = parameter_ptr;
                 std::size_t equal = parameter_str.find(L"=");
-				if (equal != std::wstring::npos)
+                if (equal != std::wstring::npos)
                 {
                     //含有空格
-					std::wstring parameter = parameter_str.substr(0, equal);
+                    std::wstring parameter = parameter_str.substr(0, equal);
 
                     //扩展环境变量
-					std::wstring parameter_path = ExpandEnvironmentPath(parameter_str.substr(equal + 1));
+                    std::wstring parameter_path = ExpandEnvironmentPath(parameter_str.substr(equal + 1));
 
                     //扩展%app%
-					ReplaceStringInPlace(parameter_path, L"%app%", exePath);
+                    ReplaceStringInPlace(parameter_path, L"%app%", exePath);
 
                     //组合参数
-					command_line.push_back( parameter + L"=" + QuotePathIfNeeded(parameter_path) );
+                    command_line.push_back( parameter + L"=" + QuotePathIfNeeded(parameter_path) );
                 }
-				else
-				{
-					//添加到参数
-					command_line.push_back( QuotePathIfNeeded(parameter_str) );
-				}
+                else
+                {
+                    //添加到参数
+                    command_line.push_back( QuotePathIfNeeded(parameter_str) );
+                }
 
                 parameter_ptr += wcslen(parameter_ptr) + 1;
             }
@@ -83,24 +83,24 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
             std::wstring program = ExpandEnvironmentPath(program_ptr);
 
             //扩展%app%
-			ReplaceStringInPlace(program, L"%app%", exePath);
+            ReplaceStringInPlace(program, L"%app%", exePath);
 
             SHELLEXECUTEINFO ShExecInfo = {0};
             ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
             ShExecInfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
             ShExecInfo.lpFile = program.c_str();
-			ShExecInfo.nShow = SW_SHOW;
+            ShExecInfo.nShow = SW_SHOW;
 
-			//检查程序参数
-			std::wstring parameter;
-			std::size_t space = program.find(L" ");
-			if (space != std::wstring::npos)
-			{
-				parameter = program.substr(space + 1);
-				program = program.substr(0, space);
-				ShExecInfo.lpFile = program.c_str();
-				ShExecInfo.lpParameters = parameter.c_str();
-			}
+            //检查程序参数
+            std::wstring parameter;
+            std::size_t space = program.find(L" ");
+            if (space != std::wstring::npos)
+            {
+                parameter = program.substr(space + 1);
+                program = program.substr(0, space);
+                ShExecInfo.lpFile = program.c_str();
+                ShExecInfo.lpParameters = parameter.c_str();
+            }
 
             if (ShellExecuteEx(&ShExecInfo))
             {
@@ -122,7 +122,7 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
             std::wstring updater = ExpandEnvironmentPath(updater_path);
 
             //扩展%app%
-			ReplaceStringInPlace(updater, L"%app%", exePath);
+            ReplaceStringInPlace(updater, L"%app%", exePath);
 
             wchar_t check_version[MAX_PATH];
             GetPrivateProfileString(L"自动更新", L"检查版本", L"", check_version, MAX_PATH, iniPath);
@@ -182,26 +182,26 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
                 std::wstring program = ExpandEnvironmentPath(program_ptr);
 
                 //扩展%app%
-				ReplaceStringInPlace(program, L"%app%", exePath);
+                ReplaceStringInPlace(program, L"%app%", exePath);
 
-				SHELLEXECUTEINFO ShExecInfo = { 0 };
-				ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-				ShExecInfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
-				ShExecInfo.lpFile = program.c_str();
-				ShExecInfo.nShow = SW_HIDE;
+                SHELLEXECUTEINFO ShExecInfo = { 0 };
+                ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+                ShExecInfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
+                ShExecInfo.lpFile = program.c_str();
+                ShExecInfo.nShow = SW_HIDE;
 
-				//检查程序参数
-				std::wstring parameter;
-				std::size_t space = program.find(L" ");
-				if (space != std::wstring::npos)
-				{
-					parameter = program.substr(space + 1);
-					program = program.substr(0, space);
-					ShExecInfo.lpFile = program.c_str();
-					ShExecInfo.lpParameters = parameter.c_str();
-				}
+                //检查程序参数
+                std::wstring parameter;
+                std::size_t space = program.find(L" ");
+                if (space != std::wstring::npos)
+                {
+                    parameter = program.substr(space + 1);
+                    program = program.substr(0, space);
+                    ShExecInfo.lpFile = program.c_str();
+                    ShExecInfo.lpParameters = parameter.c_str();
+                }
 
-				ShellExecuteEx(&ShExecInfo);
+                ShellExecuteEx(&ShExecInfo);
 
                 program_ptr += wcslen(program_ptr) + 1;
             }
@@ -226,23 +226,23 @@ EXPORT ReleaseIni(const wchar_t *exePath, wchar_t *iniPath)
         FILE *fp = _wfopen(iniPath, L"wb");
         if(fp)
         {
-			//加载文件不成功，加载资源中的内置语言包
-			HRSRC res = FindResource(hInstance, L"CONFIG", L"INI");
-			if (res)
-			{
-				HGLOBAL header = LoadResource(hInstance, res);
-				if (header)
-				{
-					const char *data = (const char*)LockResource(header);
-					DWORD size = SizeofResource(hInstance, res);
-					if (data)
-					{
-						fwrite(data, size, 1, fp);
-						UnlockResource(header);
-					}
-				}
-				FreeResource(header);
-			}
+            //加载文件不成功，加载资源中的内置语言包
+            HRSRC res = FindResource(hInstance, L"CONFIG", L"INI");
+            if (res)
+            {
+                HGLOBAL header = LoadResource(hInstance, res);
+                if (header)
+                {
+                    const char *data = (const char*)LockResource(header);
+                    DWORD size = SizeofResource(hInstance, res);
+                    if (data)
+                    {
+                        fwrite(data, size, 1, fp);
+                        UnlockResource(header);
+                    }
+                }
+                FreeResource(header);
+            }
             fclose(fp);
         }
         else
@@ -305,7 +305,7 @@ EXTERNC BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID pv)
 {
     if (dwReason == DLL_PROCESS_ATTACH)
     {
-		hInstance = hModule;
+        hInstance = hModule;
 
         //保持系统dll原有功能
         LoadSysDll(hModule);

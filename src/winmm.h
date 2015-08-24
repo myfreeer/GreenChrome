@@ -2,19 +2,19 @@
 #define EXPORT EXTERNC __declspec(dllexport) void __cdecl
 
 #define NOP_FUNC(seq) { \
-	__nop();\
-	__nop();\
-	__nop();\
-	__nop();\
-	__nop();\
-	__nop();\
-	__nop();\
-	__nop();\
-	__nop();\
-	__nop();\
-	__nop();\
-	__nop();\
-	__inbyte(seq);\
+    __nop();\
+    __nop();\
+    __nop();\
+    __nop();\
+    __nop();\
+    __nop();\
+    __nop();\
+    __nop();\
+    __nop();\
+    __nop();\
+    __nop();\
+    __nop();\
+    __inbyte(seq);\
 }
 //用__inbyte来生成一点不一样的代码，避免被VS自动合并相同函数
 

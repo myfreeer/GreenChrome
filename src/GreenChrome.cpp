@@ -229,6 +229,7 @@ void GreenChrome()
     ReleaseIni(exePath, iniPath);
 
     // 不让chrome使用SetAppIdForWindow
+    // 防止任务栏双图标
     HMODULE shell32 = LoadLibrary(L"shell32.dll");
     if(shell32)
     {
@@ -245,28 +246,32 @@ void GreenChrome()
     }
 
     // 不让chrome使用GetComputerNameW，GetVolumeInformationW
-    HMODULE kernel32 = LoadLibrary(L"kernel32.dll");
-    if(kernel32)
+    // 打造便携版chrome
+    if(GetPrivateProfileInt(L"其它设置", L"便携化", 0, iniPath)==1)
     {
-        PBYTE GetComputerNameW = (PBYTE)GetProcAddress(kernel32, "GetComputerNameW");
-        PBYTE GetVolumeInformationW = (PBYTE)GetProcAddress(kernel32, "GetVolumeInformationW");
-        if(GetComputerNameW)
+        HMODULE kernel32 = LoadLibrary(L"kernel32.dll");
+        if(kernel32)
         {
-            #ifdef _WIN64
-            BYTE patch[] = {0x31, 0xC0, 0xC3};//return 0);
-            #else
-            BYTE patch[] = {0x31, 0xC0, 0xC2, 0x08, 0x00};//return 0);
-            #endif
-            WriteMemory(GetComputerNameW, patch, sizeof(patch));
-        }
-        if(GetVolumeInformationW)
-        {
-            #ifdef _WIN64
-            BYTE patch[] = {0x31, 0xC0, 0xC3};//return 0);
-            #else
-            BYTE patch[] = {0x31, 0xC0, 0xC2, 0x20, 0x00};//return 0);
-            #endif
-            WriteMemory(GetVolumeInformationW, patch, sizeof(patch));
+            PBYTE GetComputerNameW = (PBYTE)GetProcAddress(kernel32, "GetComputerNameW");
+            PBYTE GetVolumeInformationW = (PBYTE)GetProcAddress(kernel32, "GetVolumeInformationW");
+            if(GetComputerNameW)
+            {
+                #ifdef _WIN64
+                BYTE patch[] = {0x31, 0xC0, 0xC3};//return 0);
+                #else
+                BYTE patch[] = {0x31, 0xC0, 0xC2, 0x08, 0x00};//return 0);
+                #endif
+                WriteMemory(GetComputerNameW, patch, sizeof(patch));
+            }
+            if(GetVolumeInformationW)
+            {
+                #ifdef _WIN64
+                BYTE patch[] = {0x31, 0xC0, 0xC3};//return 0);
+                #else
+                BYTE patch[] = {0x31, 0xC0, 0xC2, 0x20, 0x00};//return 0);
+                #endif
+                WriteMemory(GetVolumeInformationW, patch, sizeof(patch));
+            }
         }
     }
 

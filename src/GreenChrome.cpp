@@ -85,26 +85,11 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
             //扩展%app%
             ReplaceStringInPlace(program, L"%app%", exePath);
 
-            SHELLEXECUTEINFO ShExecInfo = {0};
-            ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-            ShExecInfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
-            ShExecInfo.lpFile = program.c_str();
-            ShExecInfo.nShow = SW_SHOW;
-
-            //检查程序参数
-            std::wstring parameter;
-            std::size_t space = program.find(L" ");
-            if (space != std::wstring::npos)
+            //运行程序
+            HANDLE program_handle = RunExecute(program.c_str());
+            if (program_handle)
             {
-                parameter = program.substr(space + 1);
-                program = program.substr(0, space);
-                ShExecInfo.lpFile = program.c_str();
-                ShExecInfo.lpParameters = parameter.c_str();
-            }
-
-            if (ShellExecuteEx(&ShExecInfo))
-            {
-                program_handles.push_back(ShExecInfo.hProcess);
+                program_handles.push_back(program_handle);
             }
 
             program_ptr += wcslen(program_ptr) + 1;
@@ -127,18 +112,10 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
             wchar_t check_version[MAX_PATH];
             GetPrivateProfileString(L"自动更新", L"检查版本", L"", check_version, MAX_PATH, iniPath);
 
-            std::wstring parameters = QuotePathIfNeeded(updater);
-            parameters += L" ";
-            parameters += check_version;
+            std::wstring parameters = QuotePathIfNeeded(updater) + L" " + QuotePathIfNeeded(exePath) + L" " + check_version;
 
-            SHELLEXECUTEINFO ShExecInfo = {0};
-            ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-            ShExecInfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
-            ShExecInfo.lpFile = updater.c_str();
-            ShExecInfo.lpParameters = parameters.c_str();
-            ShExecInfo.nShow = SW_SHOW;
-
-            ShellExecuteEx(&ShExecInfo);
+            //运行程序
+            RunExecute(parameters.c_str());
         }
     }
 
@@ -174,7 +151,7 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
                 }
             }
 
-            //强制杀掉额外程序
+            //退出时运行额外程序
             wchar_t *program_ptr = close_program;
             while (program_ptr && *program_ptr)
             {
@@ -184,24 +161,8 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
                 //扩展%app%
                 ReplaceStringInPlace(program, L"%app%", exePath);
 
-                SHELLEXECUTEINFO ShExecInfo = { 0 };
-                ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-                ShExecInfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
-                ShExecInfo.lpFile = program.c_str();
-                ShExecInfo.nShow = SW_HIDE;
-
-                //检查程序参数
-                std::wstring parameter;
-                std::size_t space = program.find(L" ");
-                if (space != std::wstring::npos)
-                {
-                    parameter = program.substr(space + 1);
-                    program = program.substr(0, space);
-                    ShExecInfo.lpFile = program.c_str();
-                    ShExecInfo.lpParameters = parameter.c_str();
-                }
-
-                ShellExecuteEx(&ShExecInfo);
+                //运行程序
+                RunExecute(program.c_str(), SW_HIDE);
 
                 program_ptr += wcslen(program_ptr) + 1;
             }

@@ -61,3 +61,40 @@ void ReplaceStringInPlace(std::wstring& subject, const std::wstring& search, con
     }
 }
 
+//运行外部程序
+HANDLE RunExecute(const wchar_t *command, WORD show = SW_SHOW)
+{
+    std::vector <std::wstring> command_line;
+
+    int nArgs;
+    LPWSTR *szArglist = CommandLineToArgvW(command, &nArgs);
+    for (int i = 0; i < nArgs; i++)
+    {
+        command_line.push_back(QuotePathIfNeeded(szArglist[i]));
+    }
+    LocalFree(szArglist);
+
+    SHELLEXECUTEINFO ShExecInfo = { 0 };
+    ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+    ShExecInfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
+    ShExecInfo.lpFile = command_line[0].c_str();
+    ShExecInfo.nShow = show;
+
+    std::wstring parameter;
+    for (size_t i = 1; i < command_line.size(); i++)
+    {
+        parameter += command_line[i];
+        parameter += L" ";
+    }
+    if ( command_line.size() > 1 )
+    {
+        ShExecInfo.lpParameters = parameter.c_str();
+    }
+
+    if (ShellExecuteEx(&ShExecInfo))
+    {
+        return ShExecInfo.hProcess;
+    }
+    
+    return 0;
+}

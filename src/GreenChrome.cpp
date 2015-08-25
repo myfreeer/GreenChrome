@@ -228,9 +228,6 @@ void GreenChrome()
     wchar_t iniPath[MAX_PATH];
     ReleaseIni(exePath, iniPath);
 
-    //自动给任务栏pin的快捷方式加上只读属性
-    //AutoLockLnk(fullPath);
-
     // 不让chrome使用SetAppIdForWindow
     HMODULE shell32 = LoadLibrary(L"shell32.dll");
     if(shell32)
@@ -244,6 +241,32 @@ void GreenChrome()
             BYTE patch[] = {0xB8, 0x01, 0x00, 0x00, 0x00, 0xC2, 0x0C, 0x00};//return S_FALSE);
             #endif
             WriteMemory(SHGetPropertyStoreForWindow, patch, sizeof(patch));
+        }
+    }
+
+    // 不让chrome使用GetComputerNameW，GetVolumeInformationW
+    HMODULE kernel32 = LoadLibrary(L"kernel32.dll");
+    if(kernel32)
+    {
+        PBYTE GetComputerNameW = (PBYTE)GetProcAddress(kernel32, "GetComputerNameW");
+        PBYTE GetVolumeInformationW = (PBYTE)GetProcAddress(kernel32, "GetVolumeInformationW");
+        if(GetComputerNameW)
+        {
+            #ifdef _WIN64
+            BYTE patch[] = {0x31, 0xC0, 0xC3};//return 0);
+            #else
+            BYTE patch[] = {0x31, 0xC0, 0xC2, 0x08, 0x00};//return 0);
+            #endif
+            WriteMemory(GetComputerNameW, patch, sizeof(patch));
+        }
+        if(GetVolumeInformationW)
+        {
+            #ifdef _WIN64
+            BYTE patch[] = {0x31, 0xC0, 0xC3};//return 0);
+            #else
+            BYTE patch[] = {0x31, 0xC0, 0xC2, 0x20, 0x00};//return 0);
+            #endif
+            WriteMemory(GetVolumeInformationW, patch, sizeof(patch));
         }
     }
 

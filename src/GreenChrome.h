@@ -35,7 +35,6 @@ HMODULE hInstance;
 #include "winmm.h"
 #include "GetParent.h"
 #include "Loader.h"
-#include "NoRegisteredClass.h"
 #include "TabBookmark.h"
 #include "Bosskey.h"
 

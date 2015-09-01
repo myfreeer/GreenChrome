@@ -24,7 +24,7 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
                 std::size_t equal = parameter_str.find(L"=");
                 if (equal != std::wstring::npos)
                 {
-                    //含有空格
+                    //含有等号
                     std::wstring parameter = parameter_str.substr(0, equal);
 
                     //扩展环境变量
@@ -39,7 +39,7 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
                 else
                 {
                     //添加到参数
-                    command_line.push_back( QuotePathIfNeeded(parameter_str) );
+                    command_line.push_back( parameter_str );
                 }
 
                 parameter_ptr += wcslen(parameter_ptr) + 1;
@@ -54,7 +54,7 @@ void NewCommand(const wchar_t *iniPath,const wchar_t *exePath,const wchar_t *ful
     {
         WritePrivateProfileString(L"其它设置", L"首次运行", L"0", iniPath);
 
-        command_line.push_back(L"http://www.shuax.com");
+        command_line.push_back(L"http://www.shuax.com/?from=greenchrome");
     }
 
     //是否是首先启动的dll
@@ -187,7 +187,7 @@ EXPORT ReleaseIni(const wchar_t *exePath, wchar_t *iniPath)
         FILE *fp = _wfopen(iniPath, L"wb");
         if(fp)
         {
-            //加载文件不成功，加载资源中的内置语言包
+            //从资源中读取默认配置文件
             HRSRC res = FindResource(hInstance, L"CONFIG", L"INI");
             if (res)
             {
@@ -229,6 +229,7 @@ void GreenChrome()
     ReleaseIni(exePath, iniPath);
 
     // 不让chrome使用SetAppIdForWindow
+    // chromium/ui/base/win/shell.cc
     // 防止任务栏双图标
     HMODULE shell32 = LoadLibrary(L"shell32.dll");
     if(shell32)
@@ -246,6 +247,7 @@ void GreenChrome()
     }
 
     // 不让chrome使用GetComputerNameW，GetVolumeInformationW
+    // chromium/rlz/win/lib/machine_id_win.cc
     // 打造便携版chrome
     if(GetPrivateProfileInt(L"其它设置", L"便携化", 0, iniPath)==1)
     {
@@ -275,8 +277,23 @@ void GreenChrome()
         }
     }
 
-    //修复Win8上常见的没有注册类错误
-    FixNoRegisteredClass();
+    // 让IsChromeMetroSupported强制返回false
+    // chromium/chrome/installer/util/shell_util.cc
+    // 修复没有注册类错误
+    HMODULE kernel32 = LoadLibrary(L"kernel32.dll");
+    if (kernel32)
+    {
+        PBYTE VerifyVersionInfoW = (PBYTE)GetProcAddress(kernel32, "VerifyVersionInfoW");
+        if (VerifyVersionInfoW)
+        {
+        #ifdef _WIN64
+            BYTE patch[] = {0x31, 0xC0, 0xC3};//return 0);
+        #else
+            BYTE patch[] = {0x31, 0xC0, 0xC2, 0x10, 0x00};//return 0);
+        #endif
+            WriteMemory(VerifyVersionInfoW, patch, sizeof(patch));
+        }
+    }
 
     //标签页，书签，地址栏增强
     TabBookmark(iniPath);

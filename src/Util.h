@@ -1,6 +1,4 @@
-﻿
-
-bool ReadMemory(PBYTE BaseAddress, PBYTE Buffer, DWORD nSize)
+﻿bool ReadMemory(PBYTE BaseAddress, PBYTE Buffer, DWORD nSize)
 {
     DWORD ProtectFlag = 0;
     if (VirtualProtectEx(GetCurrentProcess(), BaseAddress, nSize, PAGE_EXECUTE_READWRITE, &ProtectFlag))

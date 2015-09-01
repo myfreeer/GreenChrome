@@ -653,14 +653,14 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 
 void TabBookmark(const wchar_t *iniPath)
 {
-    DoubleClickCloseTab = GetPrivateProfileInt(L"其它设置", L"双击关闭标签", 1, iniPath)==1;
-    RightClickCloseTab = GetPrivateProfileInt(L"其它设置", L"右键关闭标签", 1, iniPath)==1;
-    KeepLastTab = GetPrivateProfileInt(L"其它设置", L"保留最后标签", 1, iniPath)==1;
-    FastTabSwitch1 = GetPrivateProfileInt(L"其它设置", L"快速标签切换1", 1, iniPath)==1;
-    FastTabSwitch2 = GetPrivateProfileInt(L"其它设置", L"快速标签切换2", 1, iniPath)==1;
-    BookMarkNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开书签", 1, iniPath)==1;
-    OpenUrlNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开网址", 1, iniPath)==1;
-    NotBlankTab = GetPrivateProfileInt(L"其它设置", L"非空白页面生效", 1, iniPath)==1;
+    DoubleClickCloseTab = GetPrivateProfileInt(L"其它设置", L"双击关闭标签", 0, iniPath)==1;
+    RightClickCloseTab = GetPrivateProfileInt(L"其它设置", L"右键关闭标签", 0, iniPath)==1;
+    KeepLastTab = GetPrivateProfileInt(L"其它设置", L"保留最后标签", 0, iniPath)==1;
+    FastTabSwitch1 = GetPrivateProfileInt(L"其它设置", L"快速标签切换1", 0, iniPath)==1;
+    FastTabSwitch2 = GetPrivateProfileInt(L"其它设置", L"快速标签切换2", 0, iniPath)==1;
+    BookMarkNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开书签", 0, iniPath)==1;
+    OpenUrlNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开网址", 0, iniPath)==1;
+    NotBlankTab = GetPrivateProfileInt(L"其它设置", L"非空白页面生效", 0, iniPath)==1;
 
     if(!wcsstr(GetCommandLineW(), L"--channel"))
     {

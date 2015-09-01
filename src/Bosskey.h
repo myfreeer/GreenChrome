@@ -2,8 +2,7 @@
 
 static bool is_hide = false;
 
-HWND WndList[100];
-int now = 0;
+static std::vector <HWND> hwnd_list;
 
 BOOL CALLBACK SearchChromeWindow(HWND hWnd, LPARAM lParam)
 {
@@ -14,14 +13,9 @@ BOOL CALLBACK SearchChromeWindow(HWND hWnd, LPARAM lParam)
         GetClassName(hWnd, buff, 255);
         if ( wcscmp(buff, L"Chrome_WidgetWin_1")==0 )// || wcscmp(buff, L"Chrome_WidgetWin_2")==0 || wcscmp(buff, L"SysShadow")==0 )
         {
-            if(now<100)
-            {
-                ShowWindow(hWnd, SW_HIDE);
-                WndList[now] = hWnd;
-                now++;
-            }
+            ShowWindow(hWnd, SW_HIDE);
+            hwnd_list.push_back(hWnd);
         }
-
     }
     return true;
 }
@@ -33,13 +27,11 @@ void OnBosskey()
     }
     else
     {
-
-        for(int i = now - 1;i>=0;i--)
+        for (auto r_iter = hwnd_list.rbegin(); r_iter != hwnd_list.rend() ; r_iter++)
         {
-            HWND hWnd = WndList[i];
-            ShowWindow(hWnd, SW_SHOW);
+            ShowWindow(*r_iter, SW_SHOW);
         }
-        now = 0;
+        hwnd_list.clear();
     }
     is_hide = !is_hide;
 }
@@ -47,7 +39,7 @@ void OnBosskey()
 void HotKeyRegister(PVOID pvoid)
 {
     LPARAM lParam = (LPARAM)pvoid;
-    RegisterHotKey(NULL,0,LOWORD(lParam), HIWORD(lParam));
+    RegisterHotKey(NULL, 0, LOWORD(lParam), HIWORD(lParam));
 
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))

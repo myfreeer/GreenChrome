@@ -6,86 +6,60 @@ bool FastTabSwitch2 = false;
 bool BookMarkNewTab = false;
 bool OpenUrlNewTab = false;
 bool NotBlankTab = false;
+bool FrontNewTab = false;
 
 #define KEY_PRESSED 0x8000
 
-// 发送中键，关闭标签或者在新标签打开书签
-void SendMiddleClick()
+// 发送按键
+class SendKeys
 {
-    INPUT input[1];
-    memset(input, 0, sizeof(input));
+public:
+    template<typename ... T>
+    SendKeys(T ... keys)
+    {
+        std::vector <int> keys_ = { keys ... };
+        for (auto & key : keys_ )
+        {
+            INPUT input = { 0 };
+            input.type = INPUT_KEYBOARD;
+            input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
+            input.ki.wVk = key;
 
-    input[0].type = INPUT_MOUSE;
+            //修正鼠标消息
+            switch (key)
+            {
+            case VK_MBUTTON:
+                input.type = INPUT_MOUSE;
+                input.mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
+                break;
+            }
 
-    input[0].mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
-    SendInput(1, input, sizeof(INPUT));
+            inputs_.push_back(input);
+        }
 
-    input[0].mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
-    SendInput(1, input, sizeof(INPUT));
-}
+        SendInput(inputs_.size(), &inputs_[0], sizeof(INPUT));
+    }
+    ~SendKeys()
+    {
+        for (auto & input : inputs_)
+        {
+            input.ki.dwFlags |= KEYEVENTF_KEYUP;
 
-// 打开新标签页，发送ctrl+t
-void OpenNewTab()
-{
-    INPUT input[2];
-    memset(input, 0, sizeof(input));
+            //修正鼠标消息
+            switch (input.ki.wVk)
+            {
+            case VK_MBUTTON:
+                input.mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
+                break;
+            }
+        }
 
-    input[0].type = INPUT_KEYBOARD;
-    input[1].type = INPUT_KEYBOARD;
+        SendInput(inputs_.size(), &inputs_[0], sizeof(INPUT));
+    }
+private:
+    std::vector <INPUT> inputs_;
+};
 
-    input[0].ki.wVk = VK_CONTROL;
-    input[1].ki.wVk = 'T';
-
-    input[0].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
-    input[1].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
-    SendInput(2, input, sizeof(INPUT));
-
-    input[0].ki.dwFlags |= KEYEVENTF_KEYUP;
-    input[1].ki.dwFlags |= KEYEVENTF_KEYUP;
-    SendInput(2, input, sizeof(INPUT));
-}
-
-// 切换标签页，发送ctrl+pagedown/pageup
-void SwitchTab(int zDelta)
-{
-    INPUT input[2];
-    memset(input, 0, sizeof(input));
-
-    input[0].type = INPUT_KEYBOARD;
-    input[1].type = INPUT_KEYBOARD;
-
-    input[0].ki.wVk = VK_CONTROL;
-    input[1].ki.wVk = (zDelta>0)?VK_PRIOR:VK_NEXT;
-
-    input[0].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
-    input[1].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
-    SendInput(2, input, sizeof(INPUT));
-
-    input[0].ki.dwFlags |= KEYEVENTF_KEYUP;
-    input[1].ki.dwFlags |= KEYEVENTF_KEYUP;
-    SendInput(2, input, sizeof(INPUT));
-}
-
-// 在新标签打开url，发送alt+enter
-void OpenNewUrlTab()
-{
-    INPUT input[2];
-    memset(input, 0, sizeof(input));
-
-    input[0].type = INPUT_KEYBOARD;
-    input[1].type = INPUT_KEYBOARD;
-
-    input[0].ki.wVk = VK_MENU;
-    input[1].ki.wVk = VK_RETURN;
-
-    input[0].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
-    input[1].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
-    SendInput(2, input, sizeof(INPUT));
-
-    input[0].ki.dwFlags |= KEYEVENTF_KEYUP;
-    input[1].ki.dwFlags |= KEYEVENTF_KEYUP;
-    SendInput(2, input, sizeof(INPUT));
-}
 /*
 chrome ui tree
 
@@ -563,11 +537,14 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             int zDelta = GET_WHEEL_DELTA_WPARAM(pwheel->mouseData);
             if( FastTabSwitch1 && IsOnTheTab(TopContainerView, pmouse->pt) )
             {
-                SwitchTab(zDelta);
+                // 切换标签页，发送ctrl+pagedown/pageup
+                SendKeys(VK_CONTROL, zDelta>0 ? VK_PRIOR : VK_NEXT);
             }
             else if( FastTabSwitch2 && (GetAsyncKeyState(VK_RBUTTON) & KEY_PRESSED) )
             {
-                SwitchTab(zDelta);
+                // 切换标签页，发送ctrl+pagedown/pageup
+                SendKeys(VK_CONTROL, zDelta>0 ? VK_PRIOR : VK_NEXT);
+
                 wheel_tab_ing = true;
                 if(TopContainerView)
                 {
@@ -593,19 +570,31 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 
     if(keep_tab)
     {
-        OpenNewTab();
+        // 最后一个标签页要关闭，新建一个标签
+        // 打开新标签页，发送ctrl+t
+        SendKeys(VK_CONTROL, 'T');
     }
 
     if(close_tab)
     {
-        SendMiddleClick();
+        // 发送中键消息，关闭标签
+        SendKeys(VK_MBUTTON);
         close_tab_ing = true;
         return 1;
     }
 
     if(bookmark_new_tab)
     {
-        SendMiddleClick();
+        if(FrontNewTab)
+        {
+            // 发送中键消息，新建标签，前台
+            SendKeys(VK_MBUTTON, VK_SHIFT);
+        }
+        else
+        {
+            // 发送中键消息，关闭标签
+            SendKeys(VK_MBUTTON);
+        }
         return 1;
     }
 
@@ -617,6 +606,7 @@ HHOOK keyboard_hook;
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     static bool open_url_ing = false;
+    static bool close_tab_ing = false;
     if (nCode==HC_ACTION)
     {
         if(wParam==VK_RETURN && OpenUrlNewTab)
@@ -624,6 +614,11 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             if(open_url_ing)
             {
                 open_url_ing = false;
+                return CallNextHookEx(keyboard_hook, nCode, wParam, lParam );
+            }
+            if(close_tab_ing)
+            {
+                close_tab_ing = false;
                 return CallNextHookEx(keyboard_hook, nCode, wParam, lParam );
             }
 
@@ -643,7 +638,38 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 
             if(open_url_ing)
             {
-                OpenNewUrlTab();
+                // 在新标签打开url，发送alt+enter
+                SendKeys(VK_MENU, VK_RETURN);
+                return 1;
+            }
+        }
+
+        if(wParam=='W' && (GetAsyncKeyState(VK_CONTROL) & KEY_PRESSED) && KeepLastTab)
+        {
+            bool keep_tab = false;
+
+            IAccessible* TopContainerView = GetTopContainerView(GetForegroundWindow());
+            if (IsOnlyOneTab(TopContainerView))
+            {
+                keep_tab = true;
+            }
+
+            if (TopContainerView)
+            {
+                TopContainerView->Release();
+            }
+
+            if (keep_tab)
+            {
+                // 打开新标签页，发送ctrl+t
+                SendKeys(VK_CONTROL, 'T');
+
+                // 切换到上一个标签页
+                SendKeys(VK_CONTROL, VK_PRIOR);
+
+                // 关闭标签页
+                close_tab_ing = true;
+                SendKeys(VK_CONTROL, 'W');
                 return 1;
             }
         }
@@ -661,6 +687,7 @@ void TabBookmark(const wchar_t *iniPath)
     BookMarkNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开书签", 0, iniPath)==1;
     OpenUrlNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开网址", 0, iniPath)==1;
     NotBlankTab = GetPrivateProfileInt(L"其它设置", L"非空白页面生效", 0, iniPath)==1;
+    FrontNewTab = GetPrivateProfileInt(L"其它设置", L"前台打开新标签", 0, iniPath)==1;
 
     if(!wcsstr(GetCommandLineW(), L"--channel"))
     {

@@ -231,18 +231,21 @@ void GreenChrome()
     // 不让chrome使用SetAppIdForWindow
     // chromium/ui/base/win/shell.cc
     // 防止任务栏双图标
-    HMODULE shell32 = LoadLibrary(L"shell32.dll");
-    if(shell32)
+    if(GetPrivateProfileInt(L"其它设置", L"修复双图标", 0, iniPath)==1)
     {
-        PBYTE SHGetPropertyStoreForWindow = (PBYTE)GetProcAddress(shell32, "SHGetPropertyStoreForWindow");
-        if(SHGetPropertyStoreForWindow)
+        HMODULE shell32 = LoadLibrary(L"shell32.dll");
+        if(shell32)
         {
-            #ifdef _WIN64
-            BYTE patch[] = {0xB8, 0x01, 0x00, 0x00, 0x00, 0xC3};//return S_FALSE);
-            #else
-            BYTE patch[] = {0xB8, 0x01, 0x00, 0x00, 0x00, 0xC2, 0x0C, 0x00};//return S_FALSE);
-            #endif
-            WriteMemory(SHGetPropertyStoreForWindow, patch, sizeof(patch));
+            PBYTE SHGetPropertyStoreForWindow = (PBYTE)GetProcAddress(shell32, "SHGetPropertyStoreForWindow");
+            if(SHGetPropertyStoreForWindow)
+            {
+                #ifdef _WIN64
+                BYTE patch[] = {0xB8, 0x01, 0x00, 0x00, 0x00, 0xC3};//return S_FALSE);
+                #else
+                BYTE patch[] = {0xB8, 0x01, 0x00, 0x00, 0x00, 0xC2, 0x0C, 0x00};//return S_FALSE);
+                #endif
+                WriteMemory(SHGetPropertyStoreForWindow, patch, sizeof(patch));
+            }
         }
     }
 
@@ -280,18 +283,21 @@ void GreenChrome()
     // 让IsChromeMetroSupported强制返回false
     // chromium/chrome/installer/util/shell_util.cc
     // 修复没有注册类错误
-    HMODULE kernel32 = LoadLibrary(L"kernel32.dll");
-    if (kernel32)
+    if(GetPrivateProfileInt(L"其它设置", L"修复没有注册类", 0, iniPath)==1)
     {
-        PBYTE VerifyVersionInfoW = (PBYTE)GetProcAddress(kernel32, "VerifyVersionInfoW");
-        if (VerifyVersionInfoW)
+        HMODULE kernel32 = LoadLibrary(L"kernel32.dll");
+        if (kernel32)
         {
-        #ifdef _WIN64
-            BYTE patch[] = {0x31, 0xC0, 0xC3};//return 0);
-        #else
-            BYTE patch[] = {0x31, 0xC0, 0xC2, 0x10, 0x00};//return 0);
-        #endif
-            WriteMemory(VerifyVersionInfoW, patch, sizeof(patch));
+            PBYTE VerifyVersionInfoW = (PBYTE)GetProcAddress(kernel32, "VerifyVersionInfoW");
+            if (VerifyVersionInfoW)
+            {
+            #ifdef _WIN64
+                BYTE patch[] = {0x31, 0xC0, 0xC3};//return 0);
+            #else
+                BYTE patch[] = {0x31, 0xC0, 0xC2, 0x10, 0x00};//return 0);
+            #endif
+                WriteMemory(VerifyVersionInfoW, patch, sizeof(patch));
+            }
         }
     }
 

@@ -240,14 +240,15 @@ void GreenChrome()
             if(SHGetPropertyStoreForWindow)
             {
                 #ifdef _WIN64
-                BYTE patch[] = {0xB8, 0x01, 0x00, 0x00, 0x00, 0xC3};//return S_FALSE);
+                BYTE patch[] = {0xB8, 0xFF, 0xFF, 0xFF, 0xFF ,0xC3};//return -1);
                 #else
-                BYTE patch[] = {0xB8, 0x01, 0x00, 0x00, 0x00, 0xC2, 0x0C, 0x00};//return S_FALSE);
+                BYTE patch[] = {0xB8, 0xFF, 0xFF, 0xFF, 0xFF, 0xC2, 0x0C, 0x00};//return -1);
                 #endif
                 WriteMemory(SHGetPropertyStoreForWindow, patch, sizeof(patch));
             }
         }
     }
+
 
     // 不让chrome使用GetComputerNameW，GetVolumeInformationW
     // chromium/rlz/win/lib/machine_id_win.cc

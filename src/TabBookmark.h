@@ -454,7 +454,7 @@ bool IsOmniboxViewFocus(IAccessible* top)
                         {
                             GetAccessibleValue(OmniboxViewViews, [&OmniboxViewViews, &flag]
                                 (BSTR bstr){
-                                    if(bstr[0]!=0) // 地址栏不为空
+                                    if(bstr[0]!=0) // 地址栏为空直接跳过
                                     {
                                         if( (GetAccessibleState(OmniboxViewViews) & STATE_SYSTEM_FOCUSED) == STATE_SYSTEM_FOCUSED)
                                         {
@@ -607,7 +607,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     static bool open_url_ing = false;
     static bool close_tab_ing = false;
-    if (nCode==HC_ACTION)
+    if (nCode==HC_ACTION && !(lParam & 0x80000000))
     {
         if(wParam==VK_RETURN && OpenUrlNewTab)
         {

@@ -1,29 +1,4 @@
-﻿bool ReadMemory(PBYTE BaseAddress, PBYTE Buffer, DWORD nSize)
-{
-    DWORD ProtectFlag = 0;
-    if (VirtualProtectEx(GetCurrentProcess(), BaseAddress, nSize, PAGE_EXECUTE_READWRITE, &ProtectFlag))
-    {
-        memcpy(Buffer, BaseAddress, nSize);
-        VirtualProtectEx(GetCurrentProcess(), BaseAddress, nSize, ProtectFlag, &ProtectFlag);
-        return true;
-    }
-    return false;
-}
-
-bool WriteMemory(PBYTE BaseAddress, PBYTE Buffer, DWORD nSize)
-{
-    DWORD ProtectFlag = 0;
-    if (VirtualProtectEx(GetCurrentProcess(), BaseAddress, nSize, PAGE_EXECUTE_READWRITE, &ProtectFlag))
-    {
-        memcpy(BaseAddress, Buffer, nSize);
-        FlushInstructionCache(GetCurrentProcess(), BaseAddress, nSize);
-        VirtualProtectEx(GetCurrentProcess(), BaseAddress, nSize, ProtectFlag, &ProtectFlag);
-        return true;
-    }
-    return false;
-}
-
-#define MAX_SIZE 32767
+﻿#define MAX_SIZE 32767
 
 //如果需要给路径加引号
 inline std::wstring QuotePathIfNeeded(const std::wstring &path)
@@ -40,11 +15,11 @@ inline std::wstring QuotePathIfNeeded(const std::wstring &path)
 std::wstring ExpandEnvironmentPath(const std::wstring &path)
 {
     std::vector<wchar_t> buffer(MAX_PATH);
-    size_t expandedLength = ::ExpandEnvironmentStrings(path.c_str(), &buffer[0], buffer.size());
+    size_t expandedLength = ::ExpandEnvironmentStrings(path.c_str(), &buffer[0], (DWORD)buffer.size());
     if (expandedLength > buffer.size())
     {
         buffer.resize(expandedLength);
-        expandedLength = ::ExpandEnvironmentStrings(path.c_str(), &buffer[0], buffer.size());
+        expandedLength = ::ExpandEnvironmentStrings(path.c_str(), &buffer[0], (DWORD)buffer.size());
     }
     return std::wstring(&buffer[0], 0, expandedLength);
 }
@@ -95,4 +70,43 @@ HANDLE RunExecute(const wchar_t *command, WORD show = SW_SHOW)
     }
     
     return 0;
+}
+
+EXPORT ReleaseIni(const wchar_t *exePath, wchar_t *iniPath)
+{
+    //ini路径
+    wcscpy(iniPath, exePath);
+    wcscat(iniPath, L"\\GreenChrome.ini");
+
+    //生成默认ini文件
+    DWORD attribs = GetFileAttributes(iniPath);
+    if(attribs == INVALID_FILE_ATTRIBUTES || (attribs & FILE_ATTRIBUTE_DIRECTORY) )
+    {
+        FILE *fp = _wfopen(iniPath, L"wb");
+        if(fp)
+        {
+            //从资源中读取默认配置文件
+            HRSRC res = FindResource(hInstance, L"CONFIG", L"INI");
+            if (res)
+            {
+                HGLOBAL header = LoadResource(hInstance, res);
+                if (header)
+                {
+                    const char *data = (const char*)LockResource(header);
+                    DWORD size = SizeofResource(hInstance, res);
+                    if (data)
+                    {
+                        fwrite(data, size, 1, fp);
+                        UnlockResource(header);
+                    }
+                }
+                FreeResource(header);
+            }
+            fclose(fp);
+        }
+        else
+        {
+            MessageBox(0, L"无法释放GreenChrome.ini配置文件，当前目录可能不可写！", L"警告", MB_ICONWARNING);
+        }
+    }
 }

@@ -59,7 +59,7 @@ bool Bosskey(const wchar_t *iniPath)
     if(keys[0])
     {
         UINT flag = ParseHotkeys(keys);
-        _beginthread(HotKeyRegister,0,(LPVOID)flag);
+        _beginthread(HotKeyRegister, 0, (LPVOID)flag);
     }
     return keys[0]!='\0';
 }

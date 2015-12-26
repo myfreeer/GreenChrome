@@ -23,13 +23,27 @@
     <ClInclude Include="src\GetParent.h" />
     <ClInclude Include="src\GreenChrome.h" />
     <ClInclude Include="src\Loader.h" />
+    <ClInclude Include="src\minhook\include\MinHook.h" />
+    <ClInclude Include="src\minhook\src\buffer.h" />
+    <ClInclude Include="src\minhook\src\HDE\hde32.h" />
+    <ClInclude Include="src\minhook\src\HDE\hde64.h" />
+    <ClInclude Include="src\minhook\src\HDE\pstdint.h" />
+    <ClInclude Include="src\minhook\src\HDE\table32.h" />
+    <ClInclude Include="src\minhook\src\HDE\table64.h" />
+    <ClInclude Include="src\minhook\src\trampoline.h" />
     <ClInclude Include="src\Parsekeys.h" />
+    <ClInclude Include="src\Patchs.h" />
     <ClInclude Include="src\TabBookmark.h" />
     <ClInclude Include="src\Util.h" />
     <ClInclude Include="src\winmm.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\GreenChrome.cpp" />
+    <ClCompile Include="src\minhook\src\buffer.c" />
+    <ClCompile Include="src\minhook\src\HDE\hde32.c" />
+    <ClCompile Include="src\minhook\src\HDE\hde64.c" />
+    <ClCompile Include="src\minhook\src\hook.c" />
+    <ClCompile Include="src\minhook\src\trampoline.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GreenChrome.rc" />
@@ -44,26 +58,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>

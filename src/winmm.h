@@ -213,6 +213,18 @@ EXPORT waveOutWrite() NOP_FUNC(190)
 EXPORT wid32Message() NOP_FUNC(191)
 EXPORT wod32Message() NOP_FUNC(192)
 
+bool WriteMemory(PBYTE BaseAddress, PBYTE Buffer, DWORD nSize)
+{
+    DWORD ProtectFlag = 0;
+    if (VirtualProtectEx(GetCurrentProcess(), BaseAddress, nSize, PAGE_EXECUTE_READWRITE, &ProtectFlag))
+    {
+        memcpy(BaseAddress, Buffer, nSize);
+        FlushInstructionCache(GetCurrentProcess(), BaseAddress, nSize);
+        VirtualProtectEx(GetCurrentProcess(), BaseAddress, nSize, ProtectFlag, &ProtectFlag);
+        return true;
+    }
+    return false;
+}
 
 // 还原导出函数
 void InstallJMP(PBYTE BaseAddress, MWORD Function)

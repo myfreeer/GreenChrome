@@ -31,11 +31,15 @@ void GreenChrome();
 
 HMODULE hInstance;
 
-#include "util.h"
+#include "minhook\include\MinHook.h"
+
 #include "winmm.h"
+#include "util.h"
+#include "patchs.h"
 #include "GetParent.h"
 #include "Loader.h"
 #include "TabBookmark.h"
 #include "Bosskey.h"
+#include "CustomCommand.h"
 
 #endif // __MAIN_H__

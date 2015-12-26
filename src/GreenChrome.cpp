@@ -24,6 +24,9 @@ void GreenChrome()
     // 打造便携版chrome
     MakePortable(iniPath);
 
+    // 恢复NPAPI接口
+    RecoveryNPAPI(iniPath);
+
     // 标签页，书签，地址栏增强
     TabBookmark(iniPath);
 

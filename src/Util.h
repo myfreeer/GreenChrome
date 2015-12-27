@@ -214,6 +214,58 @@ uint8_t* SearchModule(const wchar_t *path, const uint8_t* sub, int m)
     return NULL;
 }
 
+#ifndef _WIN64
+uint8_t* SearchModuleReference(const wchar_t *path, const uint8_t* sub, int m)
+{
+    HMODULE module = LoadLibraryW(path);
+
+    if(!module)
+    {
+        // dll存在于版本号文件夹中
+        wchar_t version[MAX_PATH];
+        GetVersion(version);
+        wcscat(version, L"/");
+        wcscat(version, path);
+
+        module = LoadLibraryW(version);
+    }
+
+    if(module)
+    {
+        uint8_t* buffer = (uint8_t*)module;
+
+        PIMAGE_NT_HEADERS nt_header = (PIMAGE_NT_HEADERS)(buffer + ((PIMAGE_DOS_HEADER)buffer)->e_lfanew);
+        PIMAGE_SECTION_HEADER section = (PIMAGE_SECTION_HEADER)((char*)nt_header + sizeof(DWORD) +
+            sizeof(IMAGE_FILE_HEADER) + nt_header->FileHeader.SizeOfOptionalHeader);
+
+        uint8_t* find = NULL;
+
+        for (int i = 0; i<nt_header->FileHeader.NumberOfSections; i++)
+        {
+            if (strcmp((const char*)section[i].Name, ".rdata") == 0)
+            {
+                find = memmem(buffer + section[i].PointerToRawData, section[i].SizeOfRawData, sub, m);
+                break;
+            }
+        }
+
+        if(!find) return NULL;
+
+        for(int i=0; i<nt_header->FileHeader.NumberOfSections; i++)
+        {
+            if(strcmp((const char*)section[i].Name,".text")==0)
+            {
+                BYTE search[] = { 0x68, 0x00, 0x00, 0x00, 0x00 };
+                *(DWORD*)&search[1] = (DWORD)find;
+                return memmem(buffer + section[i].PointerToRawData, section[i].SizeOfRawData, search, sizeof(search));
+                break;
+            }
+        }
+    }
+    return NULL;
+}
+#endif
+
 template<typename String, typename Char, typename Function>
 void StringSplit(String *str, Char delim, Function f)
 {

@@ -1,7 +1,7 @@
 ﻿HRESULT WINAPI FakeSHGetPropertyStoreForWindow(
-  _In_  HWND   hwnd,
-  _In_  REFIID riid,
-  _Out_ void   **ppv
+    _In_  HWND   hwnd,
+    _In_  REFIID riid,
+    _Out_ void   **ppv
 )
 {
     return -1;
@@ -29,9 +29,9 @@ void RepairDoubleIcon(const wchar_t *iniPath)
 
 
 BOOL WINAPI FakeVerifyVersionInfo(
-  _In_ LPOSVERSIONINFOEX lpVersionInfo,
-  _In_ DWORD             dwTypeMask,
-  _In_ DWORDLONG         dwlConditionMask
+    _In_ LPOSVERSIONINFOEX lpVersionInfo,
+    _In_ DWORD             dwTypeMask,
+    _In_ DWORDLONG         dwlConditionMask
 )
 {
     return 0;
@@ -59,8 +59,8 @@ void RepairDelegateExecute(const wchar_t *iniPath)
 
 
 BOOL WINAPI FakeGetComputerName(
-  _Out_   LPTSTR  lpBuffer,
-  _Inout_ LPDWORD lpnSize
+    _Out_   LPTSTR  lpBuffer,
+    _Inout_ LPDWORD lpnSize
 )
 {
     return 0;
@@ -150,21 +150,21 @@ void PatchResourcesPak(uint8_t *buffer)
 HANDLE resources_pak_map = NULL;
 
 typedef HANDLE (WINAPI *pMapViewOfFile)(
-  _In_ HANDLE hFileMappingObject,
-  _In_ DWORD  dwDesiredAccess,
-  _In_ DWORD  dwFileOffsetHigh,
-  _In_ DWORD  dwFileOffsetLow,
-  _In_ SIZE_T dwNumberOfBytesToMap
+    _In_ HANDLE hFileMappingObject,
+    _In_ DWORD  dwDesiredAccess,
+    _In_ DWORD  dwFileOffsetHigh,
+    _In_ DWORD  dwFileOffsetLow,
+    _In_ SIZE_T dwNumberOfBytesToMap
 );
 
 pMapViewOfFile RawMapViewOfFile = NULL;
 
 HANDLE WINAPI MyMapViewOfFile(
-  _In_ HANDLE hFileMappingObject,
-  _In_ DWORD  dwDesiredAccess,
-  _In_ DWORD  dwFileOffsetHigh,
-  _In_ DWORD  dwFileOffsetLow,
-  _In_ SIZE_T dwNumberOfBytesToMap
+    _In_ HANDLE hFileMappingObject,
+    _In_ DWORD  dwDesiredAccess,
+    _In_ DWORD  dwFileOffsetHigh,
+    _In_ DWORD  dwFileOffsetLow,
+    _In_ SIZE_T dwNumberOfBytesToMap
 )
 {
     if(hFileMappingObject == resources_pak_map)
@@ -193,23 +193,23 @@ HANDLE WINAPI MyMapViewOfFile(
 HANDLE resources_pak_file = NULL;
 
 typedef HANDLE (WINAPI *pCreateFileMapping)(
-  _In_     HANDLE                hFile,
-  _In_opt_ LPSECURITY_ATTRIBUTES lpAttributes,
-  _In_     DWORD                 flProtect,
-  _In_     DWORD                 dwMaximumSizeHigh,
-  _In_     DWORD                 dwMaximumSizeLow,
-  _In_opt_ LPCTSTR               lpName
+    _In_     HANDLE                hFile,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpAttributes,
+    _In_     DWORD                 flProtect,
+    _In_     DWORD                 dwMaximumSizeHigh,
+    _In_     DWORD                 dwMaximumSizeLow,
+    _In_opt_ LPCTSTR               lpName
 );
 
 pCreateFileMapping RawCreateFileMapping = NULL;
 
 HANDLE WINAPI MyCreateFileMapping(
-  _In_     HANDLE                hFile,
-  _In_opt_ LPSECURITY_ATTRIBUTES lpAttributes,
-  _In_     DWORD                 flProtect,
-  _In_     DWORD                 dwMaximumSizeHigh,
-  _In_     DWORD                 dwMaximumSizeLow,
-  _In_opt_ LPCTSTR               lpName
+    _In_     HANDLE                hFile,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpAttributes,
+    _In_     DWORD                 flProtect,
+    _In_     DWORD                 dwMaximumSizeHigh,
+    _In_     DWORD                 dwMaximumSizeLow,
+    _In_opt_ LPCTSTR               lpName
 )
 {
     if(hFile == resources_pak_file)
@@ -234,25 +234,25 @@ HANDLE WINAPI MyCreateFileMapping(
 }
 
 typedef HANDLE (WINAPI *pCreateFile)(
-  _In_     LPCTSTR               lpFileName,
-  _In_     DWORD                 dwDesiredAccess,
-  _In_     DWORD                 dwShareMode,
-  _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
-  _In_     DWORD                 dwCreationDisposition,
-  _In_     DWORD                 dwFlagsAndAttributes,
-  _In_opt_ HANDLE                hTemplateFile
+    _In_     LPCTSTR               lpFileName,
+    _In_     DWORD                 dwDesiredAccess,
+    _In_     DWORD                 dwShareMode,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    _In_     DWORD                 dwCreationDisposition,
+    _In_     DWORD                 dwFlagsAndAttributes,
+    _In_opt_ HANDLE                hTemplateFile
 );
 
 pCreateFile RawCreateFile = NULL;
 
 HANDLE WINAPI MyCreateFile(
-  _In_     LPCTSTR               lpFileName,
-  _In_     DWORD                 dwDesiredAccess,
-  _In_     DWORD                 dwShareMode,
-  _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
-  _In_     DWORD                 dwCreationDisposition,
-  _In_     DWORD                 dwFlagsAndAttributes,
-  _In_opt_ HANDLE                hTemplateFile
+    _In_     LPCTSTR               lpFileName,
+    _In_     DWORD                 dwDesiredAccess,
+    _In_     DWORD                 dwShareMode,
+    _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    _In_     DWORD                 dwCreationDisposition,
+    _In_     DWORD                 dwFlagsAndAttributes,
+    _In_opt_ HANDLE                hTemplateFile
 )
 {
     HANDLE file = RawCreateFile(lpFileName, dwDesiredAccess, dwShareMode,
@@ -285,3 +285,26 @@ void BlankNewTab(const wchar_t *iniPath)
         }
     }
 }
+
+
+
+#ifndef _WIN64
+void BuildAboutProduct()
+{
+    BYTE search[] = "jsEngine";
+    uint8_t *push_string = SearchModuleReference(L"chrome.dll", search, sizeof(search));
+
+    if(push_string && *(push_string - 0x0D) == 0x68)
+    {
+        BYTE address[] = {0x00, 0x00, 0x00, 0x00 };
+
+        static char aboutProductTitle[] = "aboutProductTitle";
+        *(DWORD*)&address = (DWORD)&aboutProductTitle;
+        WriteMemory(push_string + 1, address, sizeof(address));
+
+        static char aboutProduct[] = "Google Chrome With GreenChrome";
+        *(DWORD*)&address = (DWORD)&aboutProduct;
+        WriteMemory(push_string - 0x0C, address, sizeof(address));
+    }
+}
+#endif

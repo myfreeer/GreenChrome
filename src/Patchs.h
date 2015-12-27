@@ -1,4 +1,4 @@
-﻿HRESULT FakeSHGetPropertyStoreForWindow(
+﻿HRESULT WINAPI FakeSHGetPropertyStoreForWindow(
   _In_  HWND   hwnd,
   _In_  REFIID riid,
   _Out_ void   **ppv
@@ -57,6 +57,7 @@ void RepairDelegateExecute(const wchar_t *iniPath)
 }
 
 
+
 BOOL WINAPI FakeGetComputerName(
   _Out_   LPTSTR  lpBuffer,
   _Inout_ LPDWORD lpnSize
@@ -66,8 +67,14 @@ BOOL WINAPI FakeGetComputerName(
 }
 
 BOOL WINAPI FakeGetVolumeInformation(
-  _Out_   LPTSTR  lpBuffer,
-  _Inout_ LPDWORD lpnSize
+    _In_opt_  LPCTSTR lpRootPathName,
+    _Out_opt_ LPTSTR  lpVolumeNameBuffer,
+    _In_      DWORD   nVolumeNameSize,
+    _Out_opt_ LPDWORD lpVolumeSerialNumber,
+    _Out_opt_ LPDWORD lpMaximumComponentLength,
+    _Out_opt_ LPDWORD lpFileSystemFlags,
+    _Out_opt_ LPTSTR  lpFileSystemNameBuffer,
+    _In_      DWORD   nFileSystemNameSize
 )
 {
     return 0;
@@ -97,6 +104,8 @@ void MakePortable(const wchar_t *iniPath)
     }
 }
 
+
+
 // bool PluginServiceImpl::NPAPIPluginsSupported()
 // chromium/content/browser/plugin_service_impl.cc
 void RecoveryNPAPI(const wchar_t *iniPath)
@@ -110,7 +119,7 @@ void RecoveryNPAPI(const wchar_t *iniPath)
         #endif
 
         uint8_t *npapi = SearchModule(L"chrome.dll", search, sizeof(search));
-        if(npapi &&  *(npapi - 6) == 0xFF && *(npapi - 5) == 0x90)
+        if(npapi && *(npapi - 6) == 0xFF && *(npapi - 5) == 0x90)
         {
             #ifdef _WIN64
             BYTE patch[] = {0x31, 0xC0, 0xFF, 0xC0, 0x90, 0x90};

@@ -270,7 +270,7 @@ HANDLE WINAPI MyCreateFile(
         }
 
         // 不再需要hook
-        // MH_DisableHook(CreateFileW);
+        MH_DisableHook(CreateFileW);
     }
     return file;
 }

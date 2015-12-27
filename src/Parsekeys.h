@@ -1,14 +1,4 @@
-﻿/*
-    char str[] = ",,,1234,,,,,wt";
-    StringSplit(str, ',', []
-        (const char *str)
-        {
-            printf("1:%s\n", str);
-        }
-    );
-*/
-
-#pragma warning(disable: 4996)
+﻿#pragma warning(disable: 4996)
 bool IsSystemWin7()
 {
     static int result = -1;

@@ -26,7 +26,7 @@ public:
             input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
             input.ki.wVk = key;
 
-            //修正鼠标消息
+            // 修正鼠标消息
             switch (key)
             {
             case VK_MBUTTON:
@@ -46,7 +46,7 @@ public:
         {
             input.ki.dwFlags |= KEYEVENTF_KEYUP;
 
-            //修正鼠标消息
+            // 修正鼠标消息
             switch (input.ki.wVk)
             {
             case VK_MBUTTON:
@@ -636,7 +636,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     static bool open_url_ing = false;
     static bool close_tab_ing = false;
-    if (nCode==HC_ACTION && !(lParam & 0x80000000))//pressed
+    if (nCode==HC_ACTION && !(lParam & 0x80000000)) // pressed
     {
         if(wParam==VK_RETURN && OpenUrlNewTab)
         {

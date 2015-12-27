@@ -22,16 +22,16 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
                 std::size_t equal = parameter_str.find(L"=");
                 if (equal != std::wstring::npos)
                 {
-                    //含有等号
+                    // 含有等号
                     std::wstring parameter = parameter_str.substr(0, equal);
 
-                    //扩展环境变量
+                    // 扩展环境变量
                     std::wstring parameter_path = ExpandEnvironmentPath(parameter_str.substr(equal + 1));
 
-                    //扩展%app%
+                    // 扩展%app%
                     ReplaceStringInPlace(parameter_path, L"%app%", exeFolder);
 
-                    //组合参数
+                    // 组合参数
                     command_line.push_back( parameter + L"=" + QuotePathIfNeeded(parameter_path) );
                 }
                 else

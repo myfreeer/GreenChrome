@@ -222,20 +222,20 @@ void StringSplit(String *str, Char delim, Function f)
     {
         if (*str == delim)
         {
-            *str = 0;           //截断字符串
+            *str = 0;           // 截断字符串
 
-            if (str - ptr)       //非空字符串
+            if (str - ptr)      // 非空字符串
             {
                 f(ptr);
             }
 
-            *str = delim;       //还原字符串
-            ptr = str + 1;      //移动下次结果指针
+            *str = delim;       // 还原字符串
+            ptr = str + 1;      // 移动下次结果指针
         }
         str++;
     }
 
-    if (str - ptr)  //非空字符串
+    if (str - ptr)  // 非空字符串
     {
         f(ptr);
     }
@@ -255,23 +255,23 @@ void SendKey(std::wstring &keys)
 
         WORD vk = 0;
 
-        //解析控制键
+        // 解析控制键
         if (_tcsicmp(key, _T("Shift")) == 0) vk = VK_SHIFT;
         else if (_tcsicmp(key, _T("Ctrl")) == 0) vk = VK_CONTROL;
         else if (_tcsicmp(key, _T("Alt")) == 0) vk = VK_MENU;
         else if (_tcsicmp(key, _T("Win")) == 0) vk = VK_LWIN;
-        //解析方向键
+        // 解析方向键
         else if (_tcsicmp(key, _T("←")) == 0) vk = VK_LEFT;
         else if (_tcsicmp(key, _T("→")) == 0) vk = VK_RIGHT;
         else if (_tcsicmp(key, _T("↑")) == 0) vk = VK_UP;
         else if (_tcsicmp(key, _T("↓")) == 0) vk = VK_DOWN;
-        //解析单个字符A-Z、0-9等
+        // 解析单个字符A-Z、0-9等
         else if (_tcslen(key) == 1)
         {
             if (isalnum(key[0])) vk = toupper(key[0]);
             else vk = LOWORD(VkKeyScan(key[0]));
         }
-        //解析F1-F24功能键
+        // 解析F1-F24功能键
         else if ((key[0] == 'F' || key[0] == 'f') && isdigit(key[1]) )
         {
             int FX = _ttoi(&key[1]);
@@ -295,6 +295,7 @@ void SendKey(std::wstring &keys)
             else if (_tcsicmp(key, _T("PrtSc")) == 0) vk = VK_SNAPSHOT;
             else if (_tcsicmp(key, _T("Scroll")) == 0) vk = VK_SCROLL;
             else if (_tcsicmp(key, _T("Pause")) == 0) vk = VK_PAUSE;
+            else if (_tcsicmp(key, _T("Break")) == 0) vk = VK_PAUSE;
 
             else if (_tcsicmp(key, _T("Insert")) == 0) vk = VK_INSERT;
             else if (_tcsicmp(key, _T("Delete")) == 0) vk = VK_DELETE;
@@ -304,11 +305,15 @@ void SendKey(std::wstring &keys)
 
             else if (_tcsicmp(key, _T("PageUp")) == 0) vk = VK_PRIOR;
             else if (_tcsicmp(key, _T("PageDown")) == 0) vk = VK_NEXT;
+            else if (_tcsicmp(key, _T("PgUp")) == 0) vk = VK_PRIOR;
+            else if (_tcsicmp(key, _T("PgDn")) == 0) vk = VK_NEXT;
 
+            // 浏览器快捷键
             else if (_tcsicmp(key, _T("Back")) == 0) vk = VK_BROWSER_BACK;
             else if (_tcsicmp(key, _T("Forward")) == 0) vk = VK_BROWSER_FORWARD;
             else if (_tcsicmp(key, _T("Refresh")) == 0) vk = VK_BROWSER_REFRESH;
 
+            // 音量相关快捷键
             else if (_tcsicmp(key, _T("VolumeMute")) == 0) vk = VK_VOLUME_MUTE;
             else if (_tcsicmp(key, _T("VolumeDown")) == 0) vk = VK_VOLUME_DOWN;
             else if (_tcsicmp(key, _T("VolumeUp")) == 0) vk = VK_VOLUME_UP;
@@ -321,10 +326,10 @@ void SendKey(std::wstring &keys)
 
     free(temp);
 
-    //发起按下
+    // 发送按下
     ::SendInput((UINT)inputs.size(), &inputs[0], sizeof(INPUT));
 
-    //发送弹起
+    // 发送弹起
     for ( auto &input : inputs )
     {
         input.ki.dwFlags |= KEYEVENTF_KEYUP;
@@ -382,7 +387,7 @@ bool isEndWith(const wchar_t *path,const wchar_t* ext)
 {
     if(!path || !ext) return false;
     size_t len1 = wcslen(path);
-	size_t len2 = wcslen(ext);
+    size_t len2 = wcslen(ext);
     if(len2>len1) return false;
     return !_memicmp(path + len1 - len2,ext,len2*sizeof(wchar_t));
 }

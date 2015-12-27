@@ -47,6 +47,11 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
     }
     LocalFree(szArglist);
 
+    if(GetPrivateProfileInt(L"其它设置", L"新标签空白", 0, iniPath)==1)
+    {
+        command_line.push_back(L"--force-local-ntp");
+    }
+
     std::wstring my_command_line;
     for(auto str : command_line)
     {

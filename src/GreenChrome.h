@@ -18,6 +18,20 @@
 #include <psapi.h>
 #include <oleacc.h>
 #include <process.h>
+#include <thread>
+
+#include <GdiPlus.h>
+using namespace Gdiplus;
+
+#pragma warning(disable: 4838)
+#pragma warning(disable: 4302)
+#include <atlbase.h>
+#include <atlapp.h>
+#include <atlwin.h>
+#include <atlmisc.h>
+#include <atlcrack.h>
+#include <atlctrls.h>
+#include <atlctrlx.h>
 
 // 定义MWORD为机器字长
 #include <stdint.h>
@@ -38,7 +52,12 @@ HMODULE hInstance;
 #include "patchs.h"
 #include "GetParent.h"
 #include "Loader.h"
+
+#include "gesture\GestureRecognition.h"
+#include "gesture\GestureWindow.h"
+#include "gesture\GestureMgr.h"
 #include "TabBookmark.h"
+
 #include "Bosskey.h"
 #include "CustomCommand.h"
 

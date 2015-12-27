@@ -68,7 +68,7 @@ HANDLE RunExecute(const wchar_t *command, WORD show = SW_SHOW)
     {
         return ShExecInfo.hProcess;
     }
-    
+
     return 0;
 }
 
@@ -182,7 +182,7 @@ bool GetVersion(wchar_t *vinfo)
 uint8_t* SearchModule(const wchar_t *path, const uint8_t* sub, int m)
 {
     HMODULE module = LoadLibraryW(path);
-    
+
     if(!module)
     {
         // dll存在于版本号文件夹中
@@ -212,4 +212,177 @@ uint8_t* SearchModule(const wchar_t *path, const uint8_t* sub, int m)
         }
     }
     return NULL;
+}
+
+template<typename String, typename Char, typename Function>
+void StringSplit(String *str, Char delim, Function f)
+{
+    String *ptr = str;
+    while (*str)
+    {
+        if (*str == delim)
+        {
+            *str = 0;           //截断字符串
+
+            if (str - ptr)       //非空字符串
+            {
+                f(ptr);
+            }
+
+            *str = delim;       //还原字符串
+            ptr = str + 1;      //移动下次结果指针
+        }
+        str++;
+    }
+
+    if (str - ptr)  //非空字符串
+    {
+        f(ptr);
+    }
+}
+
+void SendKey(std::wstring &keys)
+{
+    std::vector <INPUT> inputs;
+
+    TCHAR *temp = _tcsdup(keys.c_str());
+    StringSplit(temp, L'+', [&]
+        (TCHAR *key)
+    {
+        INPUT input = { 0 };
+        input.type = INPUT_KEYBOARD;
+        input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;
+
+        WORD vk = 0;
+
+        //解析控制键
+        if (_tcsicmp(key, _T("Shift")) == 0) vk = VK_SHIFT;
+        else if (_tcsicmp(key, _T("Ctrl")) == 0) vk = VK_CONTROL;
+        else if (_tcsicmp(key, _T("Alt")) == 0) vk = VK_MENU;
+        else if (_tcsicmp(key, _T("Win")) == 0) vk = VK_LWIN;
+        //解析方向键
+        else if (_tcsicmp(key, _T("←")) == 0) vk = VK_LEFT;
+        else if (_tcsicmp(key, _T("→")) == 0) vk = VK_RIGHT;
+        else if (_tcsicmp(key, _T("↑")) == 0) vk = VK_UP;
+        else if (_tcsicmp(key, _T("↓")) == 0) vk = VK_DOWN;
+        //解析单个字符A-Z、0-9等
+        else if (_tcslen(key) == 1)
+        {
+            if (isalnum(key[0])) vk = toupper(key[0]);
+            else vk = LOWORD(VkKeyScan(key[0]));
+        }
+        //解析F1-F24功能键
+        else if ((key[0] == 'F' || key[0] == 'f') && isdigit(key[1]) )
+        {
+            int FX = _ttoi(&key[1]);
+            if (FX >= 1 && FX <= 24) vk = VK_F1 + FX - 1;
+        }
+        // 解析其他按键
+        else
+        {
+            if (_tcsicmp(key, _T("Left")) == 0) vk = VK_LEFT;
+            else if (_tcsicmp(key, _T("Right")) == 0) vk = VK_RIGHT;
+            else if (_tcsicmp(key, _T("Up")) == 0) vk = VK_UP;
+            else if (_tcsicmp(key, _T("Down")) == 0) vk = VK_DOWN;
+
+            else if (_tcsicmp(key, _T("Esc")) == 0) vk = VK_ESCAPE;
+            else if (_tcsicmp(key, _T("Tab")) == 0) vk = VK_TAB;
+
+            else if (_tcsicmp(key, _T("Backspace")) == 0) vk = VK_BACK;
+            else if (_tcsicmp(key, _T("Enter")) == 0) vk = VK_RETURN;
+            else if (_tcsicmp(key, _T("Space")) == 0) vk = VK_SPACE;
+
+            else if (_tcsicmp(key, _T("PrtSc")) == 0) vk = VK_SNAPSHOT;
+            else if (_tcsicmp(key, _T("Scroll")) == 0) vk = VK_SCROLL;
+            else if (_tcsicmp(key, _T("Pause")) == 0) vk = VK_PAUSE;
+
+            else if (_tcsicmp(key, _T("Insert")) == 0) vk = VK_INSERT;
+            else if (_tcsicmp(key, _T("Delete")) == 0) vk = VK_DELETE;
+
+            else if (_tcsicmp(key, _T("End")) == 0) vk = VK_END;
+            else if (_tcsicmp(key, _T("Home")) == 0) vk = VK_HOME;
+
+            else if (_tcsicmp(key, _T("PageUp")) == 0) vk = VK_PRIOR;
+            else if (_tcsicmp(key, _T("PageDown")) == 0) vk = VK_NEXT;
+
+            else if (_tcsicmp(key, _T("Back")) == 0) vk = VK_BROWSER_BACK;
+            else if (_tcsicmp(key, _T("Forward")) == 0) vk = VK_BROWSER_FORWARD;
+            else if (_tcsicmp(key, _T("Refresh")) == 0) vk = VK_BROWSER_REFRESH;
+
+            else if (_tcsicmp(key, _T("VolumeMute")) == 0) vk = VK_VOLUME_MUTE;
+            else if (_tcsicmp(key, _T("VolumeDown")) == 0) vk = VK_VOLUME_DOWN;
+            else if (_tcsicmp(key, _T("VolumeUp")) == 0) vk = VK_VOLUME_UP;
+        }
+
+        input.ki.wVk = vk;
+
+        inputs.push_back(input);
+    });
+
+    free(temp);
+
+    //发起按下
+    ::SendInput((UINT)inputs.size(), &inputs[0], sizeof(INPUT));
+
+    //发送弹起
+    for ( auto &input : inputs )
+    {
+        input.ki.dwFlags |= KEYEVENTF_KEYUP;
+    }
+    ::SendInput((UINT)inputs.size(), &inputs[0], sizeof(INPUT));
+}
+
+// 加载资源内容
+template<typename Function>
+bool LoadFromResource(const wchar_t *type, const wchar_t *name, Function f)
+{
+    bool result = false;
+    HRSRC res = FindResource(hInstance, name, type);
+    if (res)
+    {
+        HGLOBAL header = LoadResource(hInstance, res);
+        if (header)
+        {
+            const char *data = (const char*)LockResource(header);
+            DWORD size = SizeofResource(hInstance, res);
+            if (data)
+            {
+                f(data, size);
+                result = true;
+                UnlockResource(header);
+            }
+        }
+        FreeResource(header);
+    }
+
+    return result;
+}
+
+bool ImageFromIDResource(const wchar_t *name, Image *&pImg)
+{
+    LoadFromResource(L"PNG", name, [&](const char *data, DWORD size)
+    {
+        HGLOBAL m_hMem = GlobalAlloc(GMEM_FIXED, size);
+        BYTE* pmem = (BYTE*)GlobalLock(m_hMem);
+        memcpy(pmem, data, size);
+        GlobalUnlock(m_hMem);
+
+        IStream* pstm;
+        CreateStreamOnHGlobal(m_hMem, FALSE, &pstm);
+
+        pImg = Image::FromStream(pstm);
+
+        pstm->Release();
+        GlobalFree(m_hMem);
+    });
+    return TRUE;
+}
+
+bool isEndWith(const wchar_t *path,const wchar_t* ext)
+{
+    if(!path || !ext) return false;
+    size_t len1 = wcslen(path);
+	size_t len2 = wcslen(ext);
+    if(len2>len1) return false;
+    return !_memicmp(path + len1 - len2,ext,len2*sizeof(wchar_t));
 }

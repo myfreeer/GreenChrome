@@ -27,6 +27,9 @@ void GreenChrome()
     // 恢复NPAPI接口
     RecoveryNPAPI(iniPath);
 
+    // 让新标签一片空白
+    BlankNewTab(iniPath);
+
     // 标签页，书签，地址栏增强
     TabBookmark(iniPath);
 

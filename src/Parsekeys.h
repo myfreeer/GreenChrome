@@ -7,33 +7,6 @@
         }
     );
 */
-#include <ctype.h>
-template<typename String, typename Char, typename Function>
-void StringSplit(String *str, Char delim, Function f)
-{
-    String *ptr = str;
-    while(*str)
-    {
-        if(*str==delim)
-        {
-            *str = 0;           //截断字符串
-
-            if(str - ptr)       //非空字符串
-            {
-                f(ptr);
-            }
-
-            *str = delim;       //还原字符串
-            ptr = str + 1;      //移动下次结果指针
-        }
-        str++;
-    }
-
-    if(str-ptr)  //非空字符串
-    {
-        f(ptr);
-    }
-}
 
 #pragma warning(disable: 4996)
 bool IsSystemWin7()

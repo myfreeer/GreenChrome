@@ -1,12 +1,13 @@
 ﻿bool DoubleClickCloseTab = false;
 bool RightClickCloseTab = false;
 bool KeepLastTab = false;
-bool FastTabSwitch1 = false;
-bool FastTabSwitch2 = false;
+bool HoverTabSwitch = false;
+bool RightTabSwitch = false;
 bool BookMarkNewTab = false;
 bool OpenUrlNewTab = false;
 bool NotBlankTab = false;
 bool FrontNewTab = false;
+bool MouseGesture = false;
 
 #define KEY_PRESSED 0x8000
 
@@ -473,7 +474,7 @@ bool IsOmniboxViewFocus(IAccessible* top)
     return flag;
 }
 
-HHOOK mouse_hook;
+HHOOK mouse_hook = NULL;
 LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     static bool close_tab_ing = false;
@@ -487,6 +488,31 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
     {
         PMOUSEHOOKSTRUCT pmouse = (PMOUSEHOOKSTRUCT) lParam;
 
+        // 处理鼠标手势
+        if(MouseGesture)
+        {
+            bool handled = false;
+
+            if(wParam==WM_RBUTTONDOWN)
+            {
+                handled = gesture_mgr.OnRButtonDown(pmouse);
+            }
+            if(wParam==WM_RBUTTONUP)
+            {
+                handled = gesture_mgr.OnRButtonUp(pmouse);
+            }
+            if(wParam==WM_MOUSEMOVE && gesture_mgr.IsRunning())
+            {
+                gesture_mgr.Move(pmouse->pt.x, pmouse->pt.y);
+            }
+
+            if(handled)
+            {
+                return 1;
+            }
+        }
+
+        // 忽略鼠标移动消息
         if(wParam==WM_MOUSEMOVE || wParam==WM_NCMOUSEMOVE)
         {
             return CallNextHookEx(mouse_hook, nCode, wParam, lParam );;
@@ -500,16 +526,19 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 
         IAccessible* TopContainerView = GetTopContainerView(pmouse->hwnd);
 
+        // 双击关闭
         if(wParam==WM_LBUTTONDBLCLK && DoubleClickCloseTab && IsOnOneTab(TopContainerView, pmouse->pt))
         {
             close_tab = true;
         }
 
+        // 右键关闭（没有按住SHIFT）
         if(wParam==WM_RBUTTONUP && RightClickCloseTab && !(GetAsyncKeyState(VK_SHIFT) & KEY_PRESSED) && IsOnOneTab(TopContainerView, pmouse->pt))
         {
             close_tab = true;
         }
 
+        // 只有一个标签
         if(close_tab && KeepLastTab && IsOnlyOneTab(TopContainerView))
         {
             keep_tab = true;
@@ -535,12 +564,12 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
         {
             PMOUSEHOOKSTRUCTEX pwheel = (PMOUSEHOOKSTRUCTEX) lParam;
             int zDelta = GET_WHEEL_DELTA_WPARAM(pwheel->mouseData);
-            if( FastTabSwitch1 && IsOnTheTab(TopContainerView, pmouse->pt) )
+            if( HoverTabSwitch && IsOnTheTab(TopContainerView, pmouse->pt) )
             {
                 // 切换标签页，发送ctrl+pagedown/pageup
                 SendKeys(VK_CONTROL, zDelta>0 ? VK_PRIOR : VK_NEXT);
             }
-            else if( FastTabSwitch2 && (GetAsyncKeyState(VK_RBUTTON) & KEY_PRESSED) )
+            else if( RightTabSwitch && (GetAsyncKeyState(VK_RBUTTON) & KEY_PRESSED) )
             {
                 // 切换标签页，发送ctrl+pagedown/pageup
                 SendKeys(VK_CONTROL, zDelta>0 ? VK_PRIOR : VK_NEXT);
@@ -602,7 +631,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 }
 
 
-HHOOK keyboard_hook;
+HHOOK keyboard_hook = NULL;
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     static bool open_url_ing = false;
@@ -682,16 +711,23 @@ void TabBookmark(const wchar_t *iniPath)
     DoubleClickCloseTab = GetPrivateProfileInt(L"其它设置", L"双击关闭标签页", 0, iniPath)==1;
     RightClickCloseTab = GetPrivateProfileInt(L"其它设置", L"右键关闭标签页", 0, iniPath)==1;
     KeepLastTab = GetPrivateProfileInt(L"其它设置", L"保留最后标签", 0, iniPath)==1;
-    FastTabSwitch1 = GetPrivateProfileInt(L"其它设置", L"悬停快速标签切换", 0, iniPath)==1;
-    FastTabSwitch2 = GetPrivateProfileInt(L"其它设置", L"右键快速标签切换", 0, iniPath)==1;
+    HoverTabSwitch = GetPrivateProfileInt(L"其它设置", L"悬停快速标签切换", 0, iniPath)==1;
+    RightTabSwitch = GetPrivateProfileInt(L"其它设置", L"右键快速标签切换", 0, iniPath)==1;
     BookMarkNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开书签", 0, iniPath)==1;
     OpenUrlNewTab = GetPrivateProfileInt(L"其它设置", L"新标签打开网址", 0, iniPath)==1;
     NotBlankTab = GetPrivateProfileInt(L"其它设置", L"新标签页不生效", 0, iniPath)==1;
     FrontNewTab = GetPrivateProfileInt(L"其它设置", L"前台打开新标签", 0, iniPath)==1;
+    MouseGesture = GetPrivateProfileInt(L"鼠标手势", L"启用", 0, iniPath)==1;
 
     if(!wcsstr(GetCommandLineW(), L"--channel"))
     {
         mouse_hook = SetWindowsHookEx(WH_MOUSE, MouseProc, hInstance, GetCurrentThreadId());
         keyboard_hook = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, hInstance, GetCurrentThreadId());
+
+        if(MouseGesture)
+        {
+            std::thread th(StartGestureThread);
+            th.detach();
+        }
     }
 }

@@ -17,7 +17,7 @@ void RepairDoubleIcon(const wchar_t *iniPath)
         if(shell32)
         {
             PBYTE SHGetPropertyStoreForWindow = (PBYTE)GetProcAddress(shell32, "SHGetPropertyStoreForWindow");
-            
+
             if (MH_CreateHook(SHGetPropertyStoreForWindow, FakeSHGetPropertyStoreForWindow, NULL) == MH_OK)
             {
                 MH_EnableHook(SHGetPropertyStoreForWindow);
@@ -47,7 +47,7 @@ void RepairDelegateExecute(const wchar_t *iniPath)
         if (kernel32)
         {
             PBYTE VerifyVersionInfoW = (PBYTE)GetProcAddress(kernel32, "VerifyVersionInfoW");
-            
+
             if (MH_CreateHook(VerifyVersionInfoW, FakeVerifyVersionInfo, NULL) == MH_OK)
             {
                 MH_EnableHook(VerifyVersionInfoW);
@@ -127,6 +127,161 @@ void RecoveryNPAPI(const wchar_t *iniPath)
             BYTE patch[] = {0x31, 0xC0, 0x40, 0x90, 0x90, 0x90};
             #endif
             WriteMemory(npapi - 6, patch, sizeof(patch));
+        }
+    }
+}
+
+
+
+DWORD resources_pak_size = 0;
+
+void PatchResourcesPak(uint8_t *buffer)
+{
+    BYTE search[] = "<div id=\"ntp-contents\">";
+    BYTE patch[]  = "<div id=\"shuax--patch\">";
+
+    uint8_t* pos = memmem(buffer, resources_pak_size, search, sizeof(search) - 1);
+    if(pos)
+    {
+        memcpy(pos, patch, sizeof(patch) - 1);
+    }
+}
+
+HANDLE resources_pak_map = NULL;
+
+typedef HANDLE (WINAPI *pMapViewOfFile)(
+  _In_ HANDLE hFileMappingObject,
+  _In_ DWORD  dwDesiredAccess,
+  _In_ DWORD  dwFileOffsetHigh,
+  _In_ DWORD  dwFileOffsetLow,
+  _In_ SIZE_T dwNumberOfBytesToMap
+);
+
+pMapViewOfFile RawMapViewOfFile = NULL;
+
+HANDLE WINAPI MyMapViewOfFile(
+  _In_ HANDLE hFileMappingObject,
+  _In_ DWORD  dwDesiredAccess,
+  _In_ DWORD  dwFileOffsetHigh,
+  _In_ DWORD  dwFileOffsetLow,
+  _In_ SIZE_T dwNumberOfBytesToMap
+)
+{
+    if(hFileMappingObject == resources_pak_map)
+    {
+        // 修改属性为可修改
+        LPVOID buffer = RawMapViewOfFile(hFileMappingObject, FILE_MAP_COPY, dwFileOffsetHigh,
+            dwFileOffsetLow, dwNumberOfBytesToMap);
+
+        // 不再需要hook
+        resources_pak_map = NULL;
+        MH_DisableHook(MapViewOfFile);
+
+        if(buffer)
+        {
+            // 给resources.pak打补丁
+            PatchResourcesPak((BYTE*)buffer);
+        }
+
+        return buffer;
+    }
+
+    return RawMapViewOfFile(hFileMappingObject, dwDesiredAccess, dwFileOffsetHigh,
+        dwFileOffsetLow, dwNumberOfBytesToMap);
+}
+
+HANDLE resources_pak_file = NULL;
+
+typedef HANDLE (WINAPI *pCreateFileMapping)(
+  _In_     HANDLE                hFile,
+  _In_opt_ LPSECURITY_ATTRIBUTES lpAttributes,
+  _In_     DWORD                 flProtect,
+  _In_     DWORD                 dwMaximumSizeHigh,
+  _In_     DWORD                 dwMaximumSizeLow,
+  _In_opt_ LPCTSTR               lpName
+);
+
+pCreateFileMapping RawCreateFileMapping = NULL;
+
+HANDLE WINAPI MyCreateFileMapping(
+  _In_     HANDLE                hFile,
+  _In_opt_ LPSECURITY_ATTRIBUTES lpAttributes,
+  _In_     DWORD                 flProtect,
+  _In_     DWORD                 dwMaximumSizeHigh,
+  _In_     DWORD                 dwMaximumSizeLow,
+  _In_opt_ LPCTSTR               lpName
+)
+{
+    if(hFile == resources_pak_file)
+    {
+        // 修改属性为可修改
+        resources_pak_map = RawCreateFileMapping(hFile, lpAttributes, PAGE_WRITECOPY,
+            dwMaximumSizeHigh, dwMaximumSizeLow, lpName);
+
+        // 不再需要hook
+        resources_pak_file = NULL;
+        MH_DisableHook(CreateFileMappingW);
+
+        if (MH_CreateHook(MapViewOfFile, MyMapViewOfFile, (LPVOID*)&RawMapViewOfFile) == MH_OK)
+        {
+            MH_EnableHook(MapViewOfFile);
+        }
+
+        return resources_pak_map;
+    }
+    return RawCreateFileMapping(hFile, lpAttributes, flProtect, dwMaximumSizeHigh,
+        dwMaximumSizeLow, lpName);
+}
+
+typedef HANDLE (WINAPI *pCreateFile)(
+  _In_     LPCTSTR               lpFileName,
+  _In_     DWORD                 dwDesiredAccess,
+  _In_     DWORD                 dwShareMode,
+  _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+  _In_     DWORD                 dwCreationDisposition,
+  _In_     DWORD                 dwFlagsAndAttributes,
+  _In_opt_ HANDLE                hTemplateFile
+);
+
+pCreateFile RawCreateFile = NULL;
+
+HANDLE WINAPI MyCreateFile(
+  _In_     LPCTSTR               lpFileName,
+  _In_     DWORD                 dwDesiredAccess,
+  _In_     DWORD                 dwShareMode,
+  _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+  _In_     DWORD                 dwCreationDisposition,
+  _In_     DWORD                 dwFlagsAndAttributes,
+  _In_opt_ HANDLE                hTemplateFile
+)
+{
+    HANDLE file = RawCreateFile(lpFileName, dwDesiredAccess, dwShareMode,
+        lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes,
+        hTemplateFile);
+
+    if(isEndWith(lpFileName, L"resources.pak"))
+    {
+        resources_pak_file = file;
+        resources_pak_size = GetFileSize(resources_pak_file, NULL);
+
+        if (MH_CreateHook(CreateFileMappingW, MyCreateFileMapping, (LPVOID*)&RawCreateFileMapping) == MH_OK)
+        {
+            MH_EnableHook(CreateFileMappingW);
+        }
+
+        // 不再需要hook
+        // MH_DisableHook(CreateFileW);
+    }
+    return file;
+}
+
+void BlankNewTab(const wchar_t *iniPath)
+{
+    if(GetPrivateProfileInt(L"其它设置", L"新标签空白", 0, iniPath)==1)
+    {
+        if (MH_CreateHook(CreateFileW, MyCreateFile, (LPVOID*)&RawCreateFile) == MH_OK)
+        {
+            MH_EnableHook(CreateFileW);
         }
     }
 }

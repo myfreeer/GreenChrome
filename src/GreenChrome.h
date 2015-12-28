@@ -50,6 +50,7 @@ HMODULE hInstance;
 #include "winmm.h"
 #include "util.h"
 #include "patchs.h"
+#include "PatchResourcesPak.h"
 #include "GetParent.h"
 #include "Loader.h"
 

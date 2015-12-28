@@ -27,13 +27,8 @@ void GreenChrome()
     // 恢复NPAPI接口
     RecoveryNPAPI(iniPath);
 
-    // 让新标签一片空白
-    BlankNewTab(iniPath);
-
-    // 生成关于，64位不好改，暂时不弄
-    #ifndef _WIN64
-        BuildAboutProduct();
-    #endif
+    // 给resources.pak打补丁
+    PatchResourcesPak(iniPath);
 
     // 标签页，书签，地址栏增强
     TabBookmark(iniPath);

@@ -12,6 +12,12 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
 
         if(i==0) //在进程路径后面追加参数
         {
+            // 如果需要使用新标签空白，还需要添加一个命令，否则使用的是在线版
+            if(GetPrivateProfileInt(L"其它设置", L"新标签空白", 0, iniPath)==1)
+            {
+                command_line.push_back(L"--force-local-ntp");
+            }
+
             wchar_t additional_parameter[MAX_SIZE];
             GetPrivateProfileSectionW(L"追加参数", additional_parameter, MAX_SIZE, iniPath);
 
@@ -43,14 +49,8 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
                 parameter_ptr += wcslen(parameter_ptr) + 1;
             }
         }
-
     }
     LocalFree(szArglist);
-
-    if(GetPrivateProfileInt(L"其它设置", L"新标签空白", 0, iniPath)==1)
-    {
-        command_line.push_back(L"--force-local-ntp");
-    }
 
     std::wstring my_command_line;
     for(auto str : command_line)

@@ -14,6 +14,7 @@ public:
         recognition_ = false;
         ignore_mouse_event = false;
     }
+
     //鼠标右键按下
     bool OnRButtonDown(PMOUSEHOOKSTRUCT pmouse)
     {
@@ -23,8 +24,6 @@ public:
             init = pmouse->pt;
             gesture_recognition.init(pmouse->pt.x, pmouse->pt.y);
             gesture_window->SendMessageW(WM_USER_HWND, (WPARAM)GetTopWnd(pmouse->hwnd));
-
-            SetFocus(pmouse->hwnd);
             return true;
         }
 
@@ -65,7 +64,8 @@ public:
             {
                 if((GetKeyState(VK_RBUTTON) & KEY_PRESSED))
                 {
-                    Move(pmouse->pt.x, pmouse->pt.y);
+                    gesture_recognition.move(pmouse->pt.x, pmouse->pt.y);
+                    gesture_window->SendMessageW(WM_USER_UPDATE);
                 }
                 else
                 {
@@ -87,14 +87,6 @@ public:
         return false;
     }
 private:
-
-    //鼠标移动
-    void Move(int x, int y)
-    {
-        gesture_recognition.move(x, y);
-        gesture_window->SendMessageW(WM_USER_UPDATE);
-    }
-
     HWND GetTopWnd(HWND hwnd)
     {
         while( ::GetParent(hwnd) && ::IsWindowVisible( ::GetParent(hwnd) ) )

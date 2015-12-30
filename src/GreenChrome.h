@@ -41,6 +41,8 @@ typedef uint64_t MWORD;
 typedef uint32_t MWORD;
 #endif
 
+#define KEY_PRESSED 0x8000
+
 void GreenChrome();
 
 HMODULE hInstance;

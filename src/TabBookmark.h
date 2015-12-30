@@ -9,8 +9,6 @@ bool NotBlankTab = false;
 bool FrontNewTab = false;
 bool MouseGesture = false;
 
-#define KEY_PRESSED 0x8000
-
 // 发送按键
 class SendKeys
 {
@@ -501,9 +499,9 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             {
                 handled = gesture_mgr.OnRButtonUp(pmouse);
             }
-            if(wParam==WM_MOUSEMOVE && gesture_mgr.IsRunning())
+            if(wParam==WM_MOUSEMOVE || wParam==WM_NCMOUSEMOVE)
             {
-                gesture_mgr.Move(pmouse->pt.x, pmouse->pt.y);
+                handled = gesture_mgr.OnMouseMove(pmouse);
             }
 
             if(handled)
@@ -533,7 +531,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
         }
 
         // 右键关闭（没有按住SHIFT）
-        if(wParam==WM_RBUTTONUP && RightClickCloseTab && !(GetAsyncKeyState(VK_SHIFT) & KEY_PRESSED) && IsOnOneTab(TopContainerView, pmouse->pt))
+        if(wParam==WM_RBUTTONUP && RightClickCloseTab && !(GetKeyState(VK_SHIFT) & KEY_PRESSED) && IsOnOneTab(TopContainerView, pmouse->pt))
         {
             close_tab = true;
         }
@@ -569,7 +567,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
                 // 切换标签页，发送ctrl+pagedown/pageup
                 SendKeys(VK_CONTROL, zDelta>0 ? VK_PRIOR : VK_NEXT);
             }
-            else if( RightTabSwitch && (GetAsyncKeyState(VK_RBUTTON) & KEY_PRESSED) )
+            else if( RightTabSwitch && (GetKeyState(VK_RBUTTON) & KEY_PRESSED) )
             {
                 // 切换标签页，发送ctrl+pagedown/pageup
                 SendKeys(VK_CONTROL, zDelta>0 ? VK_PRIOR : VK_NEXT);
@@ -583,7 +581,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
         }
 
-        if(wParam==WM_LBUTTONUP && BookMarkNewTab && !(GetAsyncKeyState(VK_CONTROL) & KEY_PRESSED) && IsOnOneBookmark(TopContainerView, pmouse->pt) )
+        if(wParam==WM_LBUTTONUP && BookMarkNewTab && !(GetKeyState(VK_CONTROL) & KEY_PRESSED) && IsOnOneBookmark(TopContainerView, pmouse->pt) )
         {
             if(!NotBlankTab || !IsBlankTab(TopContainerView))
             {
@@ -652,7 +650,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
 
             IAccessible* TopContainerView = GetTopContainerView(GetForegroundWindow());
-            if( !(GetAsyncKeyState(VK_MENU) & KEY_PRESSED) && IsOmniboxViewFocus(TopContainerView) )
+            if( !(GetKeyState(VK_MENU) & KEY_PRESSED) && IsOmniboxViewFocus(TopContainerView) )
             {
                 if(!NotBlankTab || !IsBlankTab(TopContainerView))
                 {
@@ -673,7 +671,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
         }
 
-        if(wParam=='W' && (GetAsyncKeyState(VK_CONTROL) & KEY_PRESSED) && KeepLastTab)
+        if(wParam=='W' && (GetKeyState(VK_CONTROL) & KEY_PRESSED) && KeepLastTab)
         {
             bool keep_tab = false;
 

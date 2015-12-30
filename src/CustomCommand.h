@@ -104,10 +104,13 @@ void LaunchUpdater(const wchar_t *iniPath, const wchar_t *exeFolder)
         wchar_t check_version[MAX_PATH];
         GetPrivateProfileString(L"自动更新", L"检查版本", L"", check_version, MAX_PATH, iniPath);
 
-        std::wstring parameters = QuotePathIfNeeded(updater) + L" " + QuotePathIfNeeded(exeFolder) + L" " + check_version;
+        if(check_version[0])
+        {
+            std::wstring parameters = QuotePathIfNeeded(updater) + L" " + QuotePathIfNeeded(exeFolder) + L" " + check_version;
 
-        // 运行程序
-        RunExecute(parameters.c_str());
+            // 运行程序
+            RunExecute(parameters.c_str());
+        }
     }
 }
 

@@ -112,21 +112,45 @@ void RecoveryNPAPI(const wchar_t *iniPath)
 {
     if(GetPrivateProfileInt(L"其它设置", L"恢复NPAPI", 0, iniPath)==1)
     {
-        #ifdef _WIN64
-        BYTE search[] = {0x88, 0x47, 0x38, 0x84, 0xC0, 0x74, 0x05};
-        #else
-        BYTE search[] = {0x88, 0x46, 0x1C, 0x84, 0xC0, 0x74, 0x05};
-        #endif
-
-        uint8_t *npapi = SearchModule(L"chrome.dll", search, sizeof(search));
-        if(npapi && *(npapi - 6) == 0xFF && *(npapi - 5) == 0x90)
         {
             #ifdef _WIN64
-            BYTE patch[] = {0x31, 0xC0, 0xFF, 0xC0, 0x90, 0x90};
+            BYTE search[] = {0x88, 0x47, 0x38, 0x84, 0xC0, 0x74, 0x05};
             #else
-            BYTE patch[] = {0x31, 0xC0, 0x40, 0x90, 0x90, 0x90};
+            BYTE search[] = {0x88, 0x46, 0x1C, 0x84, 0xC0, 0x74, 0x05};
             #endif
-            WriteMemory(npapi - 6, patch, sizeof(patch));
+
+            uint8_t *npapi = SearchModule(L"chrome.dll", search, sizeof(search));
+            if(npapi && *(npapi - 6) == 0xFF && *(npapi - 5) == 0x90)
+            {
+                #ifdef _WIN64
+                BYTE patch[] = {0x31, 0xC0, 0xFF, 0xC0, 0x90, 0x90};
+                #else
+                BYTE patch[] = {0x31, 0xC0, 0x40, 0x90, 0x90, 0x90};
+                #endif
+                WriteMemory(npapi - 6, patch, sizeof(patch));
+            }
+        }
+
+        // ShowNPAPIInfoBar NPAPIRemovalInfoBarDelegate
+        // chromium/chrome/browser/plugins/chrome_plugin_service_filter.cc
+        {
+            #ifdef _WIN64
+            BYTE search[] = {0x49, 0x8B, 0xCF, 0x48, 0x85, 0xC9, 0x74, 0x0D};
+            uint8_t *info_bar = SearchModule(L"chrome.dll", search, sizeof(search));
+            if(info_bar)
+            {
+                BYTE patch[] = {0xEB};
+                WriteMemory(info_bar + 6, patch, sizeof(patch));
+            }
+            #else
+            BYTE search[] = {0xFF, 0x75, 0x18, 0x8D, 0x4D, 0xE4, 0x51};
+            uint8_t *info_bar = SearchModule(L"chrome.dll", search, sizeof(search));
+            if(info_bar && *(info_bar - 2) == 0x74)
+            {
+                BYTE patch[] = {0xEB};
+                WriteMemory(info_bar - 2, patch, sizeof(patch));
+            }
+            #endif
         }
     }
 }

@@ -48,7 +48,7 @@ public:
         if(!image_up) return;
 
         RECT rect;
-        ::GetWindowRect(main_hwnd, &rect);
+        ::GetWindowRect(GetTopWnd(main_hwnd), &rect);
 
         int width = rect.right - rect.left;
         int height = rect.bottom - rect.top;
@@ -155,6 +155,14 @@ public:
     }
 
 private:
+	HWND GetTopWnd(HWND hwnd)
+	{
+		while (::GetParent(hwnd) && ::IsWindowVisible(::GetParent(hwnd)))
+		{
+			hwnd = ::GetParent(hwnd);
+		}
+		return hwnd;
+	}
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct)
     {
         ImageFromIDResource(L"up", image_up);

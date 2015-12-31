@@ -23,7 +23,7 @@ public:
             running_ = true;
             init = pmouse->pt;
             gesture_recognition.init(pmouse->pt.x, pmouse->pt.y);
-            gesture_window->SendMessageW(WM_USER_HWND, (WPARAM)GetTopWnd(pmouse->hwnd));
+            gesture_window->SendMessageW(WM_USER_HWND, (WPARAM)pmouse->hwnd);
             return true;
         }
 
@@ -87,14 +87,6 @@ public:
         return false;
     }
 private:
-    HWND GetTopWnd(HWND hwnd)
-    {
-        while( ::GetParent(hwnd) && ::IsWindowVisible( ::GetParent(hwnd) ) )
-        {
-            hwnd = ::GetParent(hwnd);
-        }
-        return hwnd;
-    }
     void SendOneMouse(int mouse)
     {
         INPUT input[1];

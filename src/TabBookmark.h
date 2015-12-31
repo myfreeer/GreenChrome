@@ -671,7 +671,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
         }
 
-        if(wParam=='W' && (GetKeyState(VK_CONTROL) & KEY_PRESSED) && KeepLastTab)
+        if(wParam=='W' && (GetKeyState(VK_CONTROL) & KEY_PRESSED) && (!(GetKeyState(VK_SHIFT) & KEY_PRESSED)) && KeepLastTab)
         {
             bool keep_tab = false;
 

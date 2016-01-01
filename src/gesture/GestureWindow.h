@@ -23,7 +23,7 @@ public:
 
     void DrawGestureTrack(Graphics &graphics)
     {
-        Pen pen(Color(200, 152, 204, 0), 2.5);
+        Pen pen(Color(200, 152, 204, 0), 3);
 
         std::vector<POINT> points = gesture_recognition.get_points();
         if(points.size()<2) return;
@@ -58,7 +58,7 @@ public:
 
         int x = rect.left + (width - image_up->GetWidth() * (int)count) / 2;
 
-        int y = rect.bottom - 200;
+        int y = rect.bottom - 150;
         for (size_t i = 0; i < count; ++i)
         {
             switch (command[i])
@@ -104,7 +104,7 @@ public:
         std::wstring command_name = GetGestureName(command);
 
         graphics.DrawString(command_name.c_str(), -1, &font,
-            RectF((float)rect.left, (float)rect.bottom - 200, (float)width, (float)160), &stringformat, &brush);
+            RectF((float)rect.left, (float)rect.bottom - 150, (float)width, (float)160), &stringformat, &brush);
     }
 
     void DoLayeredPaint(WTL::CDCHandle dc, RECT rcclient)

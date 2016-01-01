@@ -18,6 +18,12 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
                 command_line.push_back(L"--force-local-ntp");
             }
 
+            // 如果开启了恢复NPAPI，添加这个命令，就不需要手动点启用了
+            if(GetPrivateProfileInt(L"其它设置", L"恢复NPAPI", 0, iniPath)==1)
+            {
+                command_line.push_back(L"--always-authorize-plugins");
+            }
+
             wchar_t additional_parameter[MAX_SIZE];
             GetPrivateProfileSectionW(L"追加参数", additional_parameter, MAX_SIZE, iniPath);
 

@@ -1,5 +1,17 @@
 ﻿#define MAX_SIZE 32767
 
+// 打印调试信息
+void DebugLog(const wchar_t* format, ...)
+{
+    static wchar_t temp[4096];
+
+    va_list args;
+    va_start(args, format);
+
+    _vsnwprintf_s(temp, 4096, 4096, format, args);
+    OutputDebugString(temp);
+}
+
 // 如果需要给路径加引号
 inline std::wstring QuotePathIfNeeded(const std::wstring &path)
 {

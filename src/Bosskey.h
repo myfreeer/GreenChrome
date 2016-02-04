@@ -55,7 +55,7 @@ void HotKeyRegister(PVOID pvoid)
 bool Bosskey(const wchar_t *iniPath)
 {
     wchar_t keys[256];
-    GetPrivateProfileString(L"其它设置", L"老板键", L"", keys, 256, iniPath);
+    GetPrivateProfileString(L"基本设置", L"老板键", L"", keys, 256, iniPath);
     if(keys[0])
     {
         UINT flag = ParseHotkeys(keys);

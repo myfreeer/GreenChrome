@@ -27,11 +27,9 @@ using namespace Gdiplus;
 #pragma warning(disable: 4302)
 #include <atlbase.h>
 #include <atlapp.h>
-#include <atlwin.h>
 #include <atlmisc.h>
 #include <atlcrack.h>
 #include <atlctrls.h>
-#include <atlctrlx.h>
 
 // 定义MWORD为机器字长
 #include <stdint.h>
@@ -47,6 +45,7 @@ void GreenChrome();
 
 HMODULE hInstance;
 
+#include "..\version.h"
 #include "minhook\include\MinHook.h"
 
 #include "winmm.h"

@@ -56,9 +56,9 @@ public:
         size_t max_count = width / image_up->GetWidth();
         size_t count = min(max_count, command.length());
 
-        int x = rect.left + (width - image_up->GetWidth() * (int)count) / 2;
+        int x = (width - image_up->GetWidth() * (int)count) / 2;
 
-        int y = rect.bottom - 150;
+        int y = height - 150;
         for (size_t i = 0; i < count; ++i)
         {
             switch (command[i])
@@ -100,11 +100,11 @@ public:
         stringformat.SetAlignment(StringAlignmentCenter);
         stringformat.SetLineAlignment(StringAlignmentCenter);
 
-        SolidBrush brush(Color(255, 0xa9, 0xa9, 0xa9));
+        SolidBrush brush(Color(255, 0x98, 0x9C, 0xA0));
         std::wstring command_name = GetGestureName(command);
 
         graphics.DrawString(command_name.c_str(), -1, &font,
-            RectF((float)rect.left, (float)rect.bottom - 150, (float)width, (float)160), &stringformat, &brush);
+            RectF((float)0, (float)height - 150, (float)width, (float)160), &stringformat, &brush);
     }
 
     void DoLayeredPaint(WTL::CDCHandle dc, RECT rcclient)
@@ -114,8 +114,14 @@ public:
         graphics.SetSmoothingMode(SmoothingModeAntiAlias);
         //graphics.Clear(0x99345678);
 
-        DrawGestureTrack(graphics);
-        DrawGestureResult(graphics);
+        if(::GetPrivateProfileInt(L"鼠标手势", L"轨迹", 1, ini_path))
+        {
+            DrawGestureTrack(graphics);
+        }
+        if(::GetPrivateProfileInt(L"鼠标手势", L"动作", 1, ini_path))
+        {
+            DrawGestureResult(graphics);
+        }
     }
 
     LRESULT OnUserHwnd(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
@@ -126,8 +132,9 @@ public:
 
     LRESULT OnUserShow(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
     {
-        ::SetWindowPos(m_hWnd, NULL, 0, 0, ::GetSystemMetrics(SM_CXSCREEN), ::GetSystemMetrics(SM_CYSCREEN), SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER);
-        CenterWindow();
+        RECT rect;
+        ::GetWindowRect(GetTopWnd(main_hwnd), &rect);
+        ::SetWindowPos(m_hWnd, NULL, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOACTIVATE | SWP_NOZORDER);
 
         DoUpdateWindow();
 
@@ -155,14 +162,14 @@ public:
     }
 
 private:
-	HWND GetTopWnd(HWND hwnd)
-	{
-		while (::GetParent(hwnd) && ::IsWindowVisible(::GetParent(hwnd)))
-		{
-			hwnd = ::GetParent(hwnd);
-		}
-		return hwnd;
-	}
+    HWND GetTopWnd(HWND hwnd)
+    {
+        while (::GetParent(hwnd) && ::IsWindowVisible(::GetParent(hwnd)))
+        {
+            hwnd = ::GetParent(hwnd);
+        }
+        return hwnd;
+    }
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct)
     {
         ImageFromIDResource(L"up", image_up);
@@ -225,7 +232,7 @@ private:
         }
         else
         {
-            return L"无动作";
+            return L"无效动作";
         }
 
         return L"";

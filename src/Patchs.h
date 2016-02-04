@@ -1,57 +1,73 @@
-﻿HRESULT WINAPI FakeSHGetPropertyStoreForWindow(
-    _In_  HWND   hwnd,
-    _In_  REFIID riid,
-    _Out_ void   **ppv
+﻿wchar_t user_data_path[MAX_PATH];
+
+typedef BOOL (WINAPI *pSHGetFolderPath)(
+  _In_  HWND   hwndOwner,
+  _In_  int    nFolder,
+  _In_  HANDLE hToken,
+  _In_  DWORD  dwFlags,
+  _Out_ LPTSTR pszPath
+);
+
+pSHGetFolderPath RawSHGetFolderPath = NULL;
+
+BOOL WINAPI MySHGetFolderPath(
+  _In_  HWND   hwndOwner,
+  _In_  int    nFolder,
+  _In_  HANDLE hToken,
+  _In_  DWORD  dwFlags,
+  _Out_ LPTSTR pszPath
 )
 {
-    return -1;
-}
-
-// 不让chrome使用SetAppIdForWindow
-// chromium/ui/base/win/shell.cc
-void RepairDoubleIcon(const wchar_t *iniPath)
-{
-    if(GetPrivateProfileInt(L"其它设置", L"修复任务栏双图标", 0, iniPath)==1)
+    BOOL result = RawSHGetFolderPath(hwndOwner, nFolder, hToken, dwFlags, pszPath);
+    if (nFolder == CSIDL_LOCAL_APPDATA)
     {
-        HMODULE shell32 = LoadLibrary(L"shell32.dll");
-        if(shell32)
-        {
-            PBYTE SHGetPropertyStoreForWindow = (PBYTE)GetProcAddress(shell32, "SHGetPropertyStoreForWindow");
-
-            if (MH_CreateHook(SHGetPropertyStoreForWindow, FakeSHGetPropertyStoreForWindow, NULL) == MH_OK)
-            {
-                MH_EnableHook(SHGetPropertyStoreForWindow);
-            }
-        }
+        // 用户数据路径
+        wcscpy(pszPath, user_data_path);
     }
+
+    return result;
 }
 
-
-
-BOOL WINAPI FakeVerifyVersionInfo(
-    _In_ LPOSVERSIONINFOEX lpVersionInfo,
-    _In_ DWORD             dwTypeMask,
-    _In_ DWORDLONG         dwlConditionMask
-)
+void CustomUserData(const wchar_t *iniPath)
 {
-    return 0;
-}
+    GetPrivateProfileString(L"基本设置", L"数据目录", L"", user_data_path, MAX_PATH, iniPath);
 
-// 让IsChromeMetroSupported强制返回false
-// chromium/chrome/installer/util/shell_util.cc
-void RepairDelegateExecute(const wchar_t *iniPath)
-{
-    if(GetPrivateProfileInt(L"其它设置", L"修复没有注册类", 0, iniPath)==1)
+    // 扩展环境变量
+    std::wstring path = ExpandEnvironmentPath(user_data_path);
+
+    // exe路径
+    wchar_t exeFolder[MAX_PATH];
+    GetModuleFileNameW(NULL, exeFolder, MAX_PATH);
+    PathRemoveFileSpecW(exeFolder);
+
+    // 扩展%app%
+    ReplaceStringInPlace(path, L"%app%", exeFolder);
+
+    wcscpy(user_data_path, path.c_str());
+
+    if(user_data_path[0])
     {
-        HMODULE kernel32 = LoadLibrary(L"kernel32.dll");
-        if (kernel32)
+        #ifdef _WIN64
+        BYTE search[] = {0x48, 0x8B, 0xD1, 0xB9, 0x6E, 0x00, 0x00, 0x00, 0xE8};
+        uint8_t *get_user_data = SearchModule(L"chrome.dll", search, sizeof(search));
+        if(get_user_data && *(get_user_data + 17) == 0x0F&& *(get_user_data + 18) == 0x84)
         {
-            PBYTE VerifyVersionInfoW = (PBYTE)GetProcAddress(kernel32, "VerifyVersionInfoW");
+            BYTE patch[] = {0x90, 0xE9};
+            WriteMemory(get_user_data + 17, patch, sizeof(patch));
+        }
+        #else
+        BYTE search[] = {0x57, 0x6A, 0x6E, 0xE8};
+        uint8_t *get_user_data = SearchModule(L"chrome.dll", search, sizeof(search));
+        if(get_user_data && *(get_user_data + 12) == 0x74)
+        {
+            BYTE patch[] = {0xEB};
+            WriteMemory(get_user_data + 12, patch, sizeof(patch));
+        }
+        #endif
 
-            if (MH_CreateHook(VerifyVersionInfoW, FakeVerifyVersionInfo, NULL) == MH_OK)
-            {
-                MH_EnableHook(VerifyVersionInfoW);
-            }
+        if (MH_CreateHook(SHGetFolderPathW, MySHGetFolderPath, (LPVOID*)&RawSHGetFolderPath) == MH_OK)
+        {
+            MH_EnableHook(SHGetFolderPathW);
         }
     }
 }
@@ -84,7 +100,7 @@ BOOL WINAPI FakeGetVolumeInformation(
 // chromium/rlz/win/lib/machine_id_win.cc
 void MakePortable(const wchar_t *iniPath)
 {
-    if(GetPrivateProfileInt(L"其它设置", L"便携化", 0, iniPath)==1)
+    if(GetPrivateProfileInt(L"基本设置", L"便携化", 0, iniPath)==1)
     {
         HMODULE kernel32 = LoadLibrary(L"kernel32.dll");
         if(kernel32)
@@ -110,7 +126,7 @@ void MakePortable(const wchar_t *iniPath)
 // chromium/content/browser/plugin_service_impl.cc
 void RecoveryNPAPI(const wchar_t *iniPath)
 {
-    if(GetPrivateProfileInt(L"其它设置", L"恢复NPAPI", 0, iniPath)==1)
+    if(GetPrivateProfileInt(L"基本设置", L"恢复NPAPI", 1, iniPath)==1)
     {
         {
             #ifdef _WIN64

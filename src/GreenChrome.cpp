@@ -15,11 +15,8 @@ void GreenChrome()
     wchar_t iniPath[MAX_PATH];
     ReleaseIni(exeFolder, iniPath);
 
-    // 修复任务栏双图标
-    RepairDoubleIcon(iniPath);
-
-    // 修复没有注册类错误
-    RepairDelegateExecute(iniPath);
+    // 自定义用户数据目录
+    CustomUserData(iniPath);
 
     // 打造便携版chrome
     MakePortable(iniPath);

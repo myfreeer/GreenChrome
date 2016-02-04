@@ -40,13 +40,13 @@ public:
         for (size_t i = 1; i < points.size(); ++i)
         {
             //小于4像素忽略
-            if (GetDistance(points[i], last_point) < 4) continue;
+            if (GetDistance(points[i], last_point) <= 2) continue;
 
             int orientation = GetOrientation(points[i], last_point);
             count[orientation]++;
             for(int j = 0; j < 9; j++)
             {
-                if(count[j]>8 && last_result!=j)
+                if(count[j]>6 && last_result!=j)
                 {
                     //
                     result += str[j];

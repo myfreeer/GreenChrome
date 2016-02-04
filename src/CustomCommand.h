@@ -13,13 +13,15 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
         if(i==0) //在进程路径后面追加参数
         {
             // 如果需要使用新标签空白，还需要添加一个命令，否则使用的是在线版
-            if(GetPrivateProfileInt(L"其它设置", L"新标签空白", 0, iniPath)==1)
+            wchar_t html_file[MAX_PATH];
+            GetPrivateProfileString(L"基本设置", L"新标签页面", L"", html_file, MAX_PATH, iniPath);
+            if(html_file[0])
             {
                 command_line.push_back(L"--force-local-ntp");
             }
 
             // 如果开启了恢复NPAPI，添加这个命令，就不需要手动点启用了
-            if(GetPrivateProfileInt(L"其它设置", L"恢复NPAPI", 0, iniPath)==1)
+            if(GetPrivateProfileInt(L"基本设置", L"恢复NPAPI", 0, iniPath)==1)
             {
                 command_line.push_back(L"--always-authorize-plugins");
             }
@@ -98,7 +100,7 @@ void LaunchUpdater(const wchar_t *iniPath, const wchar_t *exeFolder)
 {
     // 检查更新
     wchar_t updater_path[MAX_PATH];
-    GetPrivateProfileString(L"自动更新", L"更新器地址", L"", updater_path, MAX_PATH, iniPath);
+    GetPrivateProfileString(L"检查更新", L"更新器地址", L"", updater_path, MAX_PATH, iniPath);
     if(updater_path[0])
     {
         // 扩展环境变量
@@ -108,7 +110,7 @@ void LaunchUpdater(const wchar_t *iniPath, const wchar_t *exeFolder)
         ReplaceStringInPlace(updater, L"%app%", exeFolder);
 
         wchar_t check_version[MAX_PATH];
-        GetPrivateProfileString(L"自动更新", L"检查版本", L"", check_version, MAX_PATH, iniPath);
+        GetPrivateProfileString(L"检查更新", L"检查版本", L"", check_version, MAX_PATH, iniPath);
 
         if(check_version[0])
         {
@@ -145,7 +147,7 @@ void LaunchAtEnd(const wchar_t *iniPath, const wchar_t *exeFolder)
 // 结束附加启动程序
 void KillAtEnd(const wchar_t *iniPath, std::vector <HANDLE> &program_handles)
 {
-    if(GetPrivateProfileInt(L"其它设置", L"自动结束运行程序", 0, iniPath)==1)
+    if(GetPrivateProfileInt(L"基本设置", L"自动结束运行程序", 1, iniPath)==1)
     {
         for(auto rogram_handle : program_handles)
         {

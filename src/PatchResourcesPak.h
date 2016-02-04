@@ -1,16 +1,87 @@
-﻿bool MakeNewTabBlank = false;
+﻿wchar_t html_file[MAX_PATH];
 
 DWORD resources_pak_size = 0;
 
-void BlankNewTab(uint8_t *buffer)
+#pragma pack(push)
+#pragma pack(1)
+
+#define PACK_FILE_VERSION  (4)
+
+struct PAK_HEADER
+{
+    uint32_t version;
+    uint32_t num_entries;
+    uint8_t encodeing;
+};
+
+struct PAK_ENTRY
+{
+    uint16_t id;
+    uint32_t offset;
+};
+
+#pragma pack(pop)
+
+template<typename Function>
+void TraversalPakFile(uint8_t *buffer, Function f)
+{
+    PAK_HEADER *pak_header = (PAK_HEADER*)buffer;
+
+    // 检查文件头
+    if (pak_header->version != PACK_FILE_VERSION) return;
+    if (pak_header->encodeing != 1) return;
+
+    PAK_ENTRY *pak_entry = (PAK_ENTRY*)(buffer + sizeof(PAK_HEADER));
+
+    // 为了保存最后一条的"下一条"，这条特殊的条目的id一定为0
+    PAK_ENTRY *end_entry = pak_entry + pak_header->num_entries;
+    if (end_entry->id != 0) return;
+
+    //
+    for (uint32_t i = 0; i < pak_header->num_entries; i++)
+    {
+        PAK_ENTRY *next_entry = pak_entry + 1;
+        if (f(buffer + pak_entry->offset, buffer + next_entry->offset, next_entry->offset - pak_entry->offset))
+        {
+            // 如果不再需要遍历就退出
+            break;
+        }
+
+        pak_entry = next_entry;
+    }
+}
+
+void CustomNewTab(uint8_t *buffer)
 {
     BYTE search[] = R"(<div id="ntp-contents">)";
-    BYTE patch[]  = R"(<div id="shuax--patch">)";
 
     uint8_t* pos = memmem(buffer, resources_pak_size, search, sizeof(search) - 1);
     if(pos)
     {
-        memcpy(pos, patch, sizeof(patch) - 1);
+        TraversalPakFile(buffer, [=](uint8_t *begin, uint8_t* end, uint32_t size){
+            if (pos >= begin && pos <= end)
+            {
+                // 填充空格
+                memset(begin, ' ', size);
+
+                if(wcscmp(html_file, L"%demo%")==0)
+                {
+                    BYTE demo[] = R"(<meta charset="utf-8"><style>html,body{height:100%;overflow:hidden;}body{margin:0;background-image:url(https://unsplash.it/1600/900?blur);background-position:center 0;background-size:cover;}#time{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-family:'Segoe UI',Arial,'Microsoft Yahei',sans-serif;color:#fff;text-shadow:0 1px 0 #000;}</style><div id="time">11:02:22</div><script>function p(a){return("0"+a).substr(-2)}function r(){var a=new Date();t=p(a.getHours())+":"+p(a.getMinutes())+":"+p(a.getSeconds());document.getElementById("time").innerText=t}r();setInterval(r,1000);</script>)";
+                    size_t demo_size = sizeof(demo) - 1;
+                    memcpy(begin, demo, demo_size);
+                }
+
+                // 读取文件覆盖内存
+                FILE * fp = _wfopen(html_file, L"rb");
+                if (fp)
+                {
+                    fread(begin, size, 1, fp);
+                    fclose(fp);
+                }
+                return true;
+            }
+            return false;
+        });
     }
 }
 
@@ -22,7 +93,7 @@ void BuildAboutDescription(uint8_t *buffer)
     <h1 i18n-content="aboutTitle"></h1>
 )";
 
-    BYTE patch[]  = R"(<body class="uber-frame"><header><h1 i18n-content="aboutTitle"></h1></header><div id="mainview-content"><div id="page-container"><div id="help-page" class="page"><div class="content-area"><div id="about-container"><img id="product-logo" srcset="chrome://theme/current-channel-logo@1x 1x, chrome://theme/current-channel-logo@2x 2x" alt=""><div id="product-description"><h2>Google Chrome With <a href="https://www.shuax.com/?from=greenchrome" target="_blank">GreenChrome</a></h2><span i18n-content="aboutProductDescription"></span></div></div><div id="help-container"><button id="get-help" i18n-content="getHelpWithChrome"></button><button id="report-issue" i18n-content="reportAnIssue"></button></div><div id="version-container"><div i18n-content="browserVersion" dir="ltr"></div><div id="update-status-container" hidden><div id="update-status-icon" class="help-page-icon up-to-date"></div><div id="update-status-message-container"><div id="update-status-message" i18n-content="updateCheckStarted"></div><div id="allowed-connection-types-message" hidden></div></div></div><div id="update-buttons-container"><div id="update-percentage" hidden></div><button id="relaunch" i18n-content="relaunch" hidden></button></div></div><div id="product-container"><div i18n-content="productName"></div><div i18n-content="productCopyright"></div><div id="product-license"></div><div id="product-tos"></div></div></div></div></div></div></body>)";
+    BYTE patch[]  = R"(<body class="uber-frame"><header><h1 i18n-content="aboutTitle"></h1></header><div id="mainview-content"><div id="page-container"><div id="help-page" class="page"><div class="content-area"><div id="about-container"><img id="product-logo" srcset="chrome://theme/current-channel-logo@1x 1x, chrome://theme/current-channel-logo@2x 2x" alt=""><div id="product-description"><h2>Google Chrome With <a href="https://www.shuax.com/?from=greenchrome" target="_blank">GreenChrome</a> <small>v)" RELEASE_VER_STR R"(</small></h2><span i18n-content="aboutProductDescription"></span></div></div><div id="help-container"><button id="get-help" i18n-content="getHelpWithChrome"></button><button id="report-issue" i18n-content="reportAnIssue"></button></div><div id="version-container"><div i18n-content="browserVersion" dir="ltr"></div><div id="update-status-container" hidden><div id="update-status-icon" class="help-page-icon up-to-date"></div><div id="update-status-message-container"><div id="update-status-message" i18n-content="updateCheckStarted"></div><div id="allowed-connection-types-message" hidden></div></div></div><div id="update-buttons-container"><div id="update-percentage" hidden></div><button id="relaunch" i18n-content="relaunch" hidden></button></div></div><div id="product-container"><div i18n-content="productName"></div><div i18n-content="productCopyright"></div><div id="product-license"></div><div id="product-tos"></div></div></div></div></div></div></body>)";
     size_t patch_size = sizeof(patch) - 1;
 
     uint8_t* start = memmem(buffer, resources_pak_size, search_start, sizeof(search_start) - 1);
@@ -77,10 +148,10 @@ HANDLE WINAPI MyMapViewOfFile(
 
         if(buffer)
         {
-            if(MakeNewTabBlank)
+            if(html_file[0])
             {
-                // 让新标签一片空白
-                BlankNewTab((BYTE*)buffer);
+                // 自定义新标签
+                CustomNewTab((BYTE*)buffer);
             }
 
             // 构造关于描述
@@ -181,7 +252,46 @@ HANDLE WINAPI MyCreateFile(
 
 void PatchResourcesPak(const wchar_t *iniPath)
 {
-    MakeNewTabBlank = GetPrivateProfileInt(L"其它设置", L"新标签空白", 0, iniPath)==1;
+    GetPrivateProfileString(L"基本设置", L"新标签页面", L"", html_file, MAX_PATH, iniPath);
+
+    // 扩展环境变量
+    std::wstring path = ExpandEnvironmentPath(html_file);
+
+    // exe路径
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+    // exe所在文件夹
+    wchar_t exeFolder[MAX_PATH];
+    wcscpy(exeFolder, exePath);
+    PathRemoveFileSpecW(exeFolder);
+
+    // 扩展%app%
+    ReplaceStringInPlace(path, L"%app%", exeFolder);
+
+    wcscpy(html_file, path.c_str());
+
+    if(html_file[0])
+    {
+        // 破解自定义页面不能使用js
+        #ifdef _WIN64
+        BYTE search[] = {0x02, 0x00, 0x00, 0x0F, 0x84, 0x88, 0x00, 0x00, 0x00};
+        uint8_t *unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
+        if(unsafe)
+        {
+            BYTE patch[] = {0x90, 0xE9};
+            WriteMemory(unsafe + 3, patch, sizeof(patch));
+        }
+        #else
+        BYTE search[] = {0x80, 0xBF, 0x81, 0x01, 0x00, 0x00, 0x00, 0x74, 0x5F};
+        uint8_t *unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
+        if(unsafe)
+        {
+            BYTE patch[] = {0xEB};
+            WriteMemory(unsafe + 7, patch, sizeof(patch));
+        }
+        #endif
+    }
 
     if (MH_CreateHook(CreateFileW, MyCreateFile, (LPVOID*)&RawCreateFile) == MH_OK)
     {

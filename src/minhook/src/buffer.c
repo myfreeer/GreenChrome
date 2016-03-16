@@ -311,5 +311,5 @@ BOOL IsExecutableAddress(LPVOID pAddress)
     MEMORY_BASIC_INFORMATION mi;
     VirtualQuery(pAddress, &mi, sizeof(MEMORY_BASIC_INFORMATION));
 
-    return ((mi.State == MEM_COMMIT || mi.State == MEM_RESERVE) && (mi.Protect & PAGE_EXECUTE_FLAGS));
+    return (mi.State == MEM_COMMIT && (mi.Protect & PAGE_EXECUTE_FLAGS));
 }

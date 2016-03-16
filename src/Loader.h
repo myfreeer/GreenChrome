@@ -2,7 +2,7 @@
 typedef int (*Startup) ();
 Startup ChromeMain = NULL;
 
-// 
+//
 int Loader()
 {
     GreenChrome();
@@ -19,8 +19,13 @@ void InstallLoader()
     PBYTE entry = (PBYTE)mi.EntryPoint;
 
     // 入口点跳转到Loader
-    if (MH_CreateHook(entry, Loader, (LPVOID*)&ChromeMain) == MH_OK)
+    MH_STATUS status = MH_CreateHook(entry, Loader, (LPVOID*)&ChromeMain);
+    if (status == MH_OK)
     {
         MH_EnableHook(entry);
+    }
+    else
+    {
+        DebugLog(L"MH_CreateHook InstallLoader failed:%d", status);
     }
 }

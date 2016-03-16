@@ -66,7 +66,7 @@ void CustomNewTab(uint8_t *buffer)
 
                 if(wcscmp(html_file, L"%demo%")==0)
                 {
-                    BYTE demo[] = R"(<meta charset="utf-8"><style>html,body{height:100%;overflow:hidden;}body{background-color:#ccc;margin:0;background-image:url(https://unsplash.it/1920/1080?random&blur);background-position:center 0;background-size:cover;}#time{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-family:'Segoe UI',Arial,'Microsoft Yahei',sans-serif;color:#fff;text-shadow:1px 1px 1px #000;}</style><div id="time">11:02:22</div><script>function p(a){return("0"+a).substr(-2)}function r(){var a=new Date();t=p(a.getHours())+":"+p(a.getMinutes())+":"+p(a.getSeconds());document.getElementById("time").innerText=t}r();setInterval(r,1000);</script>)";
+                    BYTE demo[] = R"(<meta charset="utf-8"><style>html,body{height:100%;overflow:hidden;}body{background-color:#ccc;margin:0;background-image:url(https://unsplash.it/1920/1080?random&blur);background-position:center 0;background-size:cover;}#time{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-family:'Segoe UI',Arial,'Microsoft Yahei',sans-serif;color:#fff;text-shadow:1px 1px 1px #000;}</style><div id="time">12:00:00</div><script>function p(a){return("0"+a).substr(-2)}function r(){var a=new Date();t=p(a.getHours())+":"+p(a.getMinutes())+":"+p(a.getSeconds());document.getElementById("time").innerText=t}r();setInterval(r,1000);</script>)";
                     size_t demo_size = sizeof(demo) - 1;
                     memcpy(begin, demo, demo_size);
                 }
@@ -82,6 +82,10 @@ void CustomNewTab(uint8_t *buffer)
             }
             return false;
         });
+    }
+    else
+    {
+        DebugLog(L"CustomNewTab failed");
     }
 }
 
@@ -113,6 +117,10 @@ void BuildAboutDescription(uint8_t *buffer)
                 memset(start + patch_size, ' ', free_size - patch_size);
             }
         }
+    }
+    else
+    {
+        DebugLog(L"BuildAboutDescription failed");
     }
 }
 
@@ -274,6 +282,15 @@ void PatchResourcesPak(const wchar_t *iniPath)
     if(html_file[0])
     {
         // 破解自定义页面不能使用js
+        /*
+          if (add_content_security_policy_) {
+            std::string base = kChromeURLContentSecurityPolicyHeaderBase;
+            base.append(RequiresUnsafeEval() ? " 'unsafe-eval'; " : "; ");
+            base.append(content_security_policy_object_source_);
+            base.append(content_security_policy_frame_source_);
+            info->headers->AddHeader(base);
+          }
+        */
         #ifdef _WIN64
         BYTE search[] = {0x02, 0x00, 0x00, 0x0F, 0x84, 0x88, 0x00, 0x00, 0x00};
         uint8_t *unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
@@ -281,6 +298,20 @@ void PatchResourcesPak(const wchar_t *iniPath)
         {
             BYTE patch[] = {0x90, 0xE9};
             WriteMemory(unsafe + 3, patch, sizeof(patch));
+        }
+        else
+        {
+            search[5] = 0x8D;
+            unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
+            if (unsafe)
+            {
+                BYTE patch[] = { 0x90, 0xE9 };
+                WriteMemory(unsafe + 3, patch, sizeof(patch));
+            }
+            else
+            {
+                DebugLog(L"patch unsafe-js failed");
+            }
         }
         #else
         BYTE search[] = {0x80, 0xBF, 0x81, 0x01, 0x00, 0x00, 0x00, 0x74, 0x5F};
@@ -290,11 +321,20 @@ void PatchResourcesPak(const wchar_t *iniPath)
             BYTE patch[] = {0xEB};
             WriteMemory(unsafe + 7, patch, sizeof(patch));
         }
+        else
+        {
+            DebugLog(L"patch unsafe-js failed");
+        }
         #endif
     }
 
-    if (MH_CreateHook(CreateFileW, MyCreateFile, (LPVOID*)&RawCreateFile) == MH_OK)
+    MH_STATUS status = MH_CreateHook(CreateFileW, MyCreateFile, (LPVOID*)&RawCreateFile);
+    if (status == MH_OK)
     {
         MH_EnableHook(CreateFileW);
+    }
+    else
+    {
+        DebugLog(L"MH_CreateHook PatchResourcesPak failed:%d", status);
     }
 }

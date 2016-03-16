@@ -23,6 +23,7 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
             // 如果开启了恢复NPAPI，添加这个命令，就不需要手动点启用了
             if(GetPrivateProfileInt(L"基本设置", L"恢复NPAPI", 0, iniPath)==1)
             {
+                command_line.push_back(L"--disable-infobars");
                 command_line.push_back(L"--always-authorize-plugins");
             }
 
@@ -207,5 +208,9 @@ void CustomCommand(const wchar_t *iniPath, const wchar_t *exeFolder, const wchar
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
         ExitProcess(0);
+    }
+    else
+    {
+        DebugLog(L"CreateProcessW failed:%d", GetLastError());
     }
 }

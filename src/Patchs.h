@@ -55,6 +55,10 @@ void CustomUserData(const wchar_t *iniPath)
             BYTE patch[] = {0x90, 0xE9};
             WriteMemory(get_user_data + 17, patch, sizeof(patch));
         }
+        else
+        {
+            DebugLog(L"patch user_data_path failed");
+        }
         #else
         BYTE search[] = {0x57, 0x6A, 0x6E, 0xE8};
         uint8_t *get_user_data = SearchModule(L"chrome.dll", search, sizeof(search));
@@ -63,11 +67,20 @@ void CustomUserData(const wchar_t *iniPath)
             BYTE patch[] = {0xEB};
             WriteMemory(get_user_data + 12, patch, sizeof(patch));
         }
+        else
+        {
+            DebugLog(L"patch user_data_path failed");
+        }
         #endif
 
-        if (MH_CreateHook(SHGetFolderPathW, MySHGetFolderPath, (LPVOID*)&RawSHGetFolderPath) == MH_OK)
+        MH_STATUS status = MH_CreateHook(SHGetFolderPathW, MySHGetFolderPath, (LPVOID*)&RawSHGetFolderPath);
+        if (status == MH_OK)
         {
             MH_EnableHook(SHGetFolderPathW);
+        }
+        else
+        {
+            DebugLog(L"MH_CreateHook CustomUserData failed:%d", status);
         }
     }
 }
@@ -108,13 +121,23 @@ void MakePortable(const wchar_t *iniPath)
             PBYTE GetComputerNameW = (PBYTE)GetProcAddress(kernel32, "GetComputerNameW");
             PBYTE GetVolumeInformationW = (PBYTE)GetProcAddress(kernel32, "GetVolumeInformationW");
 
-            if (MH_CreateHook(GetComputerNameW, FakeGetComputerName, NULL) == MH_OK)
+            MH_STATUS status = MH_CreateHook(GetComputerNameW, FakeGetComputerName, NULL);
+            if (status == MH_OK)
             {
                 MH_EnableHook(GetComputerNameW);
             }
-            if (MH_CreateHook(GetVolumeInformationW, FakeGetVolumeInformation, NULL) == MH_OK)
+            else
+            {
+                DebugLog(L"MH_CreateHook GetComputerNameW failed:%d", status);
+            }
+            status = MH_CreateHook(GetVolumeInformationW, FakeGetVolumeInformation, NULL);
+            if (status == MH_OK)
             {
                 MH_EnableHook(GetVolumeInformationW);
+            }
+            else
+            {
+                DebugLog(L"MH_CreateHook GetVolumeInformationW failed:%d", status);
             }
         }
     }
@@ -145,28 +168,10 @@ void RecoveryNPAPI(const wchar_t *iniPath)
                 #endif
                 WriteMemory(npapi - 6, patch, sizeof(patch));
             }
-        }
-
-        // ShowNPAPIInfoBar NPAPIRemovalInfoBarDelegate
-        // chromium/chrome/browser/plugins/chrome_plugin_service_filter.cc
-        {
-            #ifdef _WIN64
-            BYTE search[] = {0x49, 0x8B, 0xCF, 0x48, 0x85, 0xC9, 0x74, 0x0D};
-            uint8_t *info_bar = SearchModule(L"chrome.dll", search, sizeof(search));
-            if(info_bar)
+            else
             {
-                BYTE patch[] = {0xEB};
-                WriteMemory(info_bar + 6, patch, sizeof(patch));
+                DebugLog(L"patch npapi failed");
             }
-            #else
-            BYTE search[] = {0xFF, 0x75, 0x18, 0x8D, 0x4D, 0xE4, 0x51};
-            uint8_t *info_bar = SearchModule(L"chrome.dll", search, sizeof(search));
-            if(info_bar && *(info_bar - 2) == 0x74)
-            {
-                BYTE patch[] = {0xEB};
-                WriteMemory(info_bar - 2, patch, sizeof(patch));
-            }
-            #endif
         }
     }
 }

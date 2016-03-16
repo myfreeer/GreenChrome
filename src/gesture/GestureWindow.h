@@ -191,6 +191,12 @@ private:
         PathRemoveFileSpecW(ini_path);
         wcscat(ini_path, L"\\GreenChrome.ini");
 
+        if (!PathFileExistsW(ini_path))
+        {
+            std::wstring path = ExpandEnvironmentPath(L"%appdata%\\GreenChrome.ini");
+            wcscpy(ini_path, path.c_str());
+        }
+
         return 0;
     }
 

@@ -84,6 +84,33 @@ HANDLE RunExecute(const wchar_t *command, WORD show = SW_SHOW)
     return 0;
 }
 
+
+// 加载资源内容
+template<typename Function>
+bool LoadFromResource(const wchar_t *type, const wchar_t *name, Function f)
+{
+    bool result = false;
+    HRSRC res = FindResource(hInstance, name, type);
+    if (res)
+    {
+        HGLOBAL header = LoadResource(hInstance, res);
+        if (header)
+        {
+            const char *data = (const char*)LockResource(header);
+            DWORD size = SizeofResource(hInstance, res);
+            if (data)
+            {
+                f(data, size);
+                result = true;
+                UnlockResource(header);
+            }
+        }
+        FreeResource(header);
+    }
+
+    return result;
+}
+
 // 释放配置文件
 EXPORT ReleaseIni(const wchar_t *exePath, wchar_t *iniPath)
 {
@@ -91,37 +118,38 @@ EXPORT ReleaseIni(const wchar_t *exePath, wchar_t *iniPath)
     wcscpy(iniPath, exePath);
     wcscat(iniPath, L"\\GreenChrome.ini");
 
-    // 生成默认ini文件
-    DWORD attribs = GetFileAttributes(iniPath);
-    if(attribs == INVALID_FILE_ATTRIBUTES || (attribs & FILE_ATTRIBUTE_DIRECTORY) )
+    // 已经存在则跳过
+    if (PathFileExistsW(iniPath))
+    {
+        return;
+    }
+
+    // 从资源中释放默认配置文件
+    LoadFromResource(L"INI", L"CONFIG", [&](const char *data, DWORD size)
     {
         FILE *fp = _wfopen(iniPath, L"wb");
-        if(fp)
+        if (fp)
         {
-            // 从资源中读取默认配置文件
-            HRSRC res = FindResource(hInstance, L"CONFIG", L"INI");
-            if (res)
-            {
-                HGLOBAL header = LoadResource(hInstance, res);
-                if (header)
-                {
-                    const char *data = (const char*)LockResource(header);
-                    DWORD size = SizeofResource(hInstance, res);
-                    if (data)
-                    {
-                        fwrite(data, size, 1, fp);
-                        UnlockResource(header);
-                    }
-                }
-                FreeResource(header);
-            }
+            fwrite(data, size, 1, fp);
             fclose(fp);
         }
         else
         {
-            MessageBox(0, L"无法释放GreenChrome.ini配置文件，当前目录可能不可写！", L"警告", MB_ICONWARNING);
+            //不能写入当前目录，写%appdata%
+            std::wstring path = ExpandEnvironmentPath(L"%appdata%\\GreenChrome.ini");
+            wcscpy(iniPath, path.c_str());
+            fp = _wfopen(iniPath, L"wb");
+            if (fp)
+            {
+                fwrite(data, size, 1, fp);
+                fclose(fp);
+            }
+            else
+            {
+                DebugLog(L"ReleaseIni failed");
+            }
         }
-    }
+    });
 }
 
 // 搜索内存
@@ -164,6 +192,8 @@ bool GetVersion(wchar_t *vinfo)
 {
     wchar_t exePath[MAX_PATH];
     GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+    vinfo[0] = '\0';
 
     bool ret = false;
     DWORD dummy;
@@ -349,32 +379,7 @@ void SendKey(std::wstring &keys)
     ::SendInput((UINT)inputs.size(), &inputs[0], sizeof(INPUT));
 }
 
-// 加载资源内容
-template<typename Function>
-bool LoadFromResource(const wchar_t *type, const wchar_t *name, Function f)
-{
-    bool result = false;
-    HRSRC res = FindResource(hInstance, name, type);
-    if (res)
-    {
-        HGLOBAL header = LoadResource(hInstance, res);
-        if (header)
-        {
-            const char *data = (const char*)LockResource(header);
-            DWORD size = SizeofResource(hInstance, res);
-            if (data)
-            {
-                f(data, size);
-                result = true;
-                UnlockResource(header);
-            }
-        }
-        FreeResource(header);
-    }
-
-    return result;
-}
-
+//从资源载入图片
 bool ImageFromIDResource(const wchar_t *name, Image *&pImg)
 {
     LoadFromResource(L"PNG", name, [&](const char *data, DWORD size)

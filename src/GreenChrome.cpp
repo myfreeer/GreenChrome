@@ -32,9 +32,16 @@ void GreenChrome()
 
     // 父进程不是Chrome，则需要启动追加参数功能
     wchar_t parentPath[MAX_PATH];
-    if(GetParentPath(parentPath) && _wcsicmp(parentPath, exePath)!=0)
+    if (GetParentPath(parentPath))
     {
-        CustomCommand(iniPath, exeFolder, exePath);
+        if (_wcsicmp(parentPath, exePath) != 0)
+        {
+            CustomCommand(iniPath, exeFolder, exePath);
+        }
+    }
+    else
+    {
+        DebugLog(L"GetParentPath failed");
     }
 }
 
@@ -48,9 +55,14 @@ EXTERNC BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID pv)
         LoadSysDll(hModule);
 
         // 初始化HOOK库成功以后安装加载器
-        if (MH_Initialize() == MH_OK)
+        MH_STATUS status = MH_Initialize();
+        if (status == MH_OK)
         {
             InstallLoader();
+        }
+        else
+        {
+            DebugLog(L"MH_Initialize failed:%d", status);
         }
     }
     return TRUE;

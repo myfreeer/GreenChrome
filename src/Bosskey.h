@@ -19,6 +19,7 @@ BOOL CALLBACK SearchChromeWindow(HWND hWnd, LPARAM lParam)
     }
     return true;
 }
+
 void OnBosskey()
 {
     if(!is_hide)
@@ -52,6 +53,7 @@ void HotKeyRegister(PVOID pvoid)
         DispatchMessage(&msg);
     }
 }
+
 bool Bosskey(const wchar_t *iniPath)
 {
     wchar_t keys[256];

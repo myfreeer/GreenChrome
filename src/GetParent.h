@@ -58,7 +58,7 @@ void DevicePathToWin32Path(wchar_t *strDevicePath)
 
 bool GetParentPath(wchar_t* path)
 {
-    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, GetParentProcessID());
+    HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, GetParentProcessID());
     if(hProcess)
     {
         GetProcessImageFileNameW(hProcess, path, MAX_PATH);

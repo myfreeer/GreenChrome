@@ -1,30 +1,4 @@
-﻿#pragma warning(disable: 4996)
-bool IsSystemWin7()
-{
-    static int result = -1;
-    if(result==-1)
-    {
-        OSVERSIONINFO osvi;
-        osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-        ::GetVersionEx(&osvi);
-
-        if (osvi.dwMajorVersion > 6 )
-        {
-            result = true;
-        }
-        else if (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion >= 1 )
-        {
-            result = true;
-        }
-        else
-        {
-            result = false;
-        }
-    }
-    return result!=0;
-}
-
-UINT ParseHotkeys(const TCHAR* keys)
+﻿UINT ParseHotkeys(const TCHAR* keys)
 {
     UINT mo = 0;
     UINT vk = 0;
@@ -91,7 +65,8 @@ UINT ParseHotkeys(const TCHAR* keys)
 
     free(temp);
 
-    if( IsSystemWin7() ) mo |= 0x4000;
+    #define MOD_NOREPEAT 0x4000
+    if (IsWindows7OrGreater()) mo |= MOD_NOREPEAT;
 
     return MAKELPARAM(mo, vk);
 }

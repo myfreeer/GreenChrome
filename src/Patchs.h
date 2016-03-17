@@ -30,7 +30,7 @@ BOOL WINAPI MySHGetFolderPath(
 
 void CustomUserData(const wchar_t *iniPath)
 {
-    GetPrivateProfileString(L"基本设置", L"数据目录", L"", user_data_path, MAX_PATH, iniPath);
+    GetPrivateProfileStringW(L"基本设置", L"数据目录", L"", user_data_path, MAX_PATH, iniPath);
 
     // 扩展环境变量
     std::wstring path = ExpandEnvironmentPath(user_data_path);
@@ -113,9 +113,9 @@ BOOL WINAPI FakeGetVolumeInformation(
 // chromium/rlz/win/lib/machine_id_win.cc
 void MakePortable(const wchar_t *iniPath)
 {
-    if(GetPrivateProfileInt(L"基本设置", L"便携化", 0, iniPath)==1)
+    if(GetPrivateProfileIntW(L"基本设置", L"便携化", 0, iniPath)==1)
     {
-        HMODULE kernel32 = LoadLibrary(L"kernel32.dll");
+        HMODULE kernel32 = LoadLibraryW(L"kernel32.dll");
         if(kernel32)
         {
             PBYTE GetComputerNameW = (PBYTE)GetProcAddress(kernel32, "GetComputerNameW");
@@ -149,7 +149,7 @@ void MakePortable(const wchar_t *iniPath)
 // chromium/content/browser/plugin_service_impl.cc
 void RecoveryNPAPI(const wchar_t *iniPath)
 {
-    if(GetPrivateProfileInt(L"基本设置", L"恢复NPAPI", 1, iniPath)==1)
+    if(GetPrivateProfileIntW(L"基本设置", L"恢复NPAPI", 1, iniPath)==1)
     {
         {
             #ifdef _WIN64

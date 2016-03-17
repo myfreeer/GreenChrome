@@ -34,7 +34,7 @@ void GreenChrome()
     wchar_t parentPath[MAX_PATH];
     if (GetParentPath(parentPath))
     {
-        if (_wcsicmp(parentPath, exePath) != 0)
+        if (PathFileExistsW(parentPath) && _wcsicmp(parentPath, exePath) != 0)
         {
             CustomCommand(iniPath, exeFolder, exePath);
         }

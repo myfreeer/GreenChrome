@@ -104,7 +104,7 @@ void BuildAboutDescription(uint8_t *buffer)
     if(start)
     {
         BYTE search_end[] = R"(</body>)";
-        uint8_t* end = memmem(start, resources_pak_size - (start - buffer), search_end, sizeof(search_end) - 1);
+        uint8_t* end = memmem(start, resources_pak_size - (int)(start - buffer), search_end, sizeof(search_end) - 1);
         if(end)
         {
             size_t free_size = end + (sizeof(search_end) - 1) - start;
@@ -260,7 +260,7 @@ HANDLE WINAPI MyCreateFile(
 
 void PatchResourcesPak(const wchar_t *iniPath)
 {
-    GetPrivateProfileString(L"基本设置", L"新标签页面", L"", html_file, MAX_PATH, iniPath);
+    GetPrivateProfileStringW(L"基本设置", L"新标签页面", L"", html_file, MAX_PATH, iniPath);
 
     // 扩展环境变量
     std::wstring path = ExpandEnvironmentPath(html_file);

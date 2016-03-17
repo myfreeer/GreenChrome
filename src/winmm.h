@@ -264,7 +264,7 @@ void LoadSysDll(HINSTANCE hModule)
             DWORD*  pName       = (DWORD*)(pImageBase + pimExD->AddressOfNames);
             DWORD*  pFunction   = (DWORD*)(pImageBase + pimExD->AddressOfFunctions);
 
-            TCHAR szDLL[MAX_PATH+1];
+            wchar_t szDLL[MAX_PATH+1];
             GetSystemDirectory(szDLL, MAX_PATH);
             lstrcat(szDLL, TEXT("\\winmm.dll"));
 

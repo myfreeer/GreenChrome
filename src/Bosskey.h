@@ -9,8 +9,8 @@ BOOL CALLBACK SearchChromeWindow(HWND hWnd, LPARAM lParam)
     //隐藏
     if(IsWindowVisible(hWnd))
     {
-        TCHAR buff[256];
-        GetClassName(hWnd, buff, 255);
+        wchar_t buff[256];
+        GetClassNameW(hWnd, buff, 255);
         if ( wcscmp(buff, L"Chrome_WidgetWin_1")==0 )// || wcscmp(buff, L"Chrome_WidgetWin_2")==0 || wcscmp(buff, L"SysShadow")==0 )
         {
             ShowWindow(hWnd, SW_HIDE);
@@ -37,9 +37,8 @@ void OnBosskey()
     is_hide = !is_hide;
 }
 
-void HotKeyRegister(PVOID pvoid)
+void HotKeyRegister(LPARAM lParam)
 {
-    LPARAM lParam = (LPARAM)pvoid;
     RegisterHotKey(NULL, 0, LOWORD(lParam), HIWORD(lParam));
 
     MSG msg;
@@ -57,11 +56,14 @@ void HotKeyRegister(PVOID pvoid)
 bool Bosskey(const wchar_t *iniPath)
 {
     wchar_t keys[256];
-    GetPrivateProfileString(L"基本设置", L"老板键", L"", keys, 256, iniPath);
+    GetPrivateProfileStringW(L"基本设置", L"老板键", L"", keys, 256, iniPath);
     if(keys[0])
     {
         UINT flag = ParseHotkeys(keys);
-        _beginthread(HotKeyRegister, 0, (LPVOID)flag);
+
+
+        std::thread th(HotKeyRegister, flag);
+        th.detach();
     }
     return keys[0]!='\0';
 }

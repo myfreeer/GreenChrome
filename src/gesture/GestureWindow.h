@@ -114,11 +114,11 @@ public:
         graphics.SetSmoothingMode(SmoothingModeAntiAlias);
         //graphics.Clear(0x99345678);
 
-        if(::GetPrivateProfileInt(L"鼠标手势", L"轨迹", 1, ini_path))
+        if(::GetPrivateProfileIntW(L"鼠标手势", L"轨迹", 1, ini_path))
         {
             DrawGestureTrack(graphics);
         }
-        if(::GetPrivateProfileInt(L"鼠标手势", L"动作", 1, ini_path))
+        if(::GetPrivateProfileIntW(L"鼠标手势", L"动作", 1, ini_path))
         {
             DrawGestureResult(graphics);
         }
@@ -209,7 +209,7 @@ private:
     std::wstring GetAction(std::wstring &command)
     {
         wchar_t buffer[256];
-        GetPrivateProfileString(L"鼠标手势", command.c_str(), L"", buffer, 256, ini_path);
+        GetPrivateProfileStringW(L"鼠标手势", command.c_str(), L"", buffer, 256, ini_path);
         if(buffer[0])
         {
             std::wstring action = buffer;
@@ -226,7 +226,7 @@ private:
     std::wstring GetGestureName(std::wstring &command)
     {
         wchar_t buffer[256];
-        GetPrivateProfileString(L"鼠标手势", command.c_str(), L"", buffer, 256, ini_path);
+        GetPrivateProfileStringW(L"鼠标手势", command.c_str(), L"", buffer, 256, ini_path);
         if(buffer[0])
         {
             std::wstring action = buffer;

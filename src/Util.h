@@ -161,30 +161,30 @@ uint8_t* memmem(uint8_t* src, int n, const uint8_t* sub, int m)
     }
 
     short skip[256];
-    for(int i = 0; i < 256; i++)
+    for (int i = 0; i < 256; i++)
     {
         skip[i] = m;
     }
-    for(int i = 0; i < m - 1; i++)
+    for (int i = 0; i < m - 1; i++)
     {
         skip[sub[i]] = m - i - 1;
     }
 
-
     int pos = 0;
-    while(pos <= n - m)
+    while (pos <= n - m)
     {
-        int j = m -1;
-        while(j >= 0 && src[pos + j] == sub[j])
+        int j = m - 1;
+        while (j >= 0 && src[pos + j] == sub[j])
         {
             j--;
         }
-        if(j < 0 )
+        if (j < 0)
         {
             return src + pos;
         }
-        pos = pos + skip[src[pos + m -1]];
+        pos = pos + skip[src[pos + m - 1]];
     }
+
     return NULL;
 }
 
@@ -287,9 +287,9 @@ void SendKey(std::wstring &keys)
 {
     std::vector <INPUT> inputs;
 
-    TCHAR *temp = _tcsdup(keys.c_str());
+    wchar_t *temp = _tcsdup(keys.c_str());
     StringSplit(temp, L'+', [&]
-        (TCHAR *key)
+        (wchar_t *key)
     {
         INPUT input = { 0 };
         input.type = INPUT_KEYBOARD;

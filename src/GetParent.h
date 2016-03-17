@@ -26,46 +26,16 @@ DWORD GetParentProcessID()
     return 0;
 }
 
-#define BUFSIZE 512
-void DevicePathToWin32Path(wchar_t *strDevicePath)
-{
-    wchar_t szTemp[BUFSIZE];
-
-    if (GetLogicalDriveStringsW(BUFSIZE-1, szTemp))
-    {
-        wchar_t szName[MAX_PATH];
-        wchar_t szDrive[3] = L" :";
-        wchar_t* p = szTemp;
-        do
-        {
-            *szDrive = *p;
-            if (QueryDosDeviceW(szDrive, szName, MAX_PATH))
-            {
-                size_t uNameLen = wcslen(szName);
-                if (_wcsnicmp(strDevicePath, szName, uNameLen)==0)
-                {
-                    wchar_t szTempFile[MAX_PATH];
-
-                    wsprintfW(szTempFile, L"%s%s", szDrive, strDevicePath + uNameLen);
-                    wcscpy(strDevicePath, szTempFile);
-                }
-            }
-            while (*p++);
-        }
-        while (*p);
-    }
-}
-
 bool GetParentPath(wchar_t* path)
 {
     HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, GetParentProcessID());
     if(hProcess)
     {
-        GetProcessImageFileNameW(hProcess, path, MAX_PATH);
-        CloseHandle(hProcess);
+        DWORD dwSize = MAX_PATH;
+        bool ret = QueryFullProcessImageNameW(hProcess, 0, path, &dwSize)!=0;
 
-        DevicePathToWin32Path(path);
-        return true;
+        CloseHandle(hProcess);
+        return ret;
     }
 
     return false;

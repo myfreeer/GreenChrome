@@ -61,7 +61,6 @@ bool Bosskey(const wchar_t *iniPath)
     {
         UINT flag = ParseHotkeys(keys);
 
-
         std::thread th(HotKeyRegister, flag);
         th.detach();
     }

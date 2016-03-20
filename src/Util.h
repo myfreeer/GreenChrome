@@ -61,7 +61,7 @@ HANDLE RunExecute(const wchar_t *command, WORD show = SW_SHOW)
 
     SHELLEXECUTEINFO ShExecInfo = { 0 };
     ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-    ShExecInfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS;
+    ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
     ShExecInfo.lpFile = command_line[0].c_str();
     ShExecInfo.nShow = show;
 

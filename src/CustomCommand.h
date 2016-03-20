@@ -104,6 +104,9 @@ void LaunchUpdater(const wchar_t *iniPath, const wchar_t *exeFolder)
     GetPrivateProfileString(L"检查更新", L"更新器地址", L"", updater_path, MAX_PATH, iniPath);
     if(updater_path[0])
     {
+        // 转换绝对路径
+        PathCombineW(updater_path, exeFolder, updater_path);
+
         // 扩展环境变量
         std::wstring updater = ExpandEnvironmentPath(updater_path);
 

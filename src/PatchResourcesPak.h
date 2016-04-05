@@ -314,12 +314,12 @@ void PatchResourcesPak(const wchar_t *iniPath)
             }
         }
         #else
-        BYTE search[] = {0x80, 0xBF, 0x81, 0x01, 0x00, 0x00, 0x00, 0x74, 0x5F};
+        BYTE search[] = {0x01, 0x00, 0x00, 0x00, 0x74, 0x5F, 0x68};
         uint8_t *unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
         if(unsafe)
         {
             BYTE patch[] = {0xEB};
-            WriteMemory(unsafe + 7, patch, sizeof(patch));
+            WriteMemory(unsafe + 4, patch, sizeof(patch));
         }
         else
         {

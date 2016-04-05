@@ -193,15 +193,15 @@ void TraversalAccessible(IAccessible *node, Function f)
     }
 }
 
-IAccessible* GetChildElement(IAccessible *parent, bool aoto_release, int n)
+IAccessible* GetChildElement(IAccessible *parent, bool aoto_release, int index)
 {
     IAccessible* element = NULL;
     if(parent)
     {
-        int i = 0;
-        TraversalAccessible(parent, [&element, &i, &n]
+        int i = 1;
+        TraversalAccessible(parent, [&element, &i, &index]
             (IAccessible* child){
-                if(i==n)
+                if(i==index)
                 {
                     element = child;
                 }
@@ -224,29 +224,48 @@ bool CheckAccessibleRole(IAccessible* node, long role)
     return false;
 }
 
+IAccessible* FindChildElement(IAccessible *parent, long role)
+{
+    IAccessible* element = NULL;
+    if (parent)
+    {
+        int i = 1;
+        TraversalAccessible(parent, [&element, &i, &role]
+        (IAccessible* child) {
+            if (CheckAccessibleRole(child, role))
+            {
+                element = child;
+            }
+            i++;
+            return element != NULL;
+        });
+    }
+    return element;
+}
+
 IAccessible* FindTopContainerView(IAccessible *top)
 {
-    top = GetChildElement(top, true, 2);
+    top = GetChildElement(top, true, 3);
     if(!CheckAccessibleRole(top, ROLE_SYSTEM_WINDOW)) return NULL;
-
-    top = GetChildElement(top, true, 0);
-    if(!CheckAccessibleRole(top, ROLE_SYSTEM_CLIENT)) return NULL;
 
     top = GetChildElement(top, true, 1);
     if(!CheckAccessibleRole(top, ROLE_SYSTEM_CLIENT)) return NULL;
 
-    IAccessible *BookMark = GetChildElement(top, false, 1);
+    top = GetChildElement(top, true, 2);
+    if(!CheckAccessibleRole(top, ROLE_SYSTEM_CLIENT)) return NULL;
+
+    IAccessible *BookMark = GetChildElement(top, false, 2);
     if(BookMark)
     {
         if(GetAccessibleRole(BookMark)==ROLE_SYSTEM_TOOLBAR)
         {
-            top = GetChildElement(top, true, 2);
+            top = GetChildElement(top, true, 3);
+            BookMark->Release();
         }
         else
         {
-            top = GetChildElement(top, true, 1);
+            top = BookMark;
         }
-        BookMark->Release();
 
         if(!CheckAccessibleRole(top, ROLE_SYSTEM_CLIENT)) return NULL;
     }
@@ -278,8 +297,8 @@ IAccessible* GetTopContainerView(HWND hwnd)
 bool IsOnTheTab(IAccessible* top, POINT pt)
 {
     bool flag = false;
-    IAccessible *TabStrip = GetChildElement(top, false, 0);
-    if(CheckAccessibleRole(TabStrip, ROLE_SYSTEM_PAGETABLIST))
+    IAccessible *TabStrip = FindChildElement(top, ROLE_SYSTEM_PAGETABLIST);
+    if(TabStrip)
     {
         GetAccessibleSize(TabStrip, [&flag, &pt]
             (RECT rect){
@@ -290,6 +309,10 @@ bool IsOnTheTab(IAccessible* top, POINT pt)
         });
         TabStrip->Release();
     }
+    else
+    {
+        if (top) DebugLog(L"IsOnTheTab failed");
+    }
     return flag;
 }
 
@@ -297,8 +320,8 @@ bool IsOnTheTab(IAccessible* top, POINT pt)
 bool IsOnOneTab(IAccessible* top, POINT pt)
 {
     bool flag = false;
-    IAccessible *TabStrip = GetChildElement(top, false, 0);
-    if(CheckAccessibleRole(TabStrip, ROLE_SYSTEM_PAGETABLIST))
+    IAccessible *TabStrip = FindChildElement(top, ROLE_SYSTEM_PAGETABLIST);
+    if(TabStrip)
     {
         TraversalAccessible(TabStrip, [&flag, &pt]
             (IAccessible* child){
@@ -317,14 +340,18 @@ bool IsOnOneTab(IAccessible* top, POINT pt)
             });
         TabStrip->Release();
     }
+    else
+    {
+        if(top) DebugLog(L"IsOnOneTab failed");
+    }
     return flag;
 }
 
 // 是否只有一个标签
 bool IsOnlyOneTab(IAccessible* top)
 {
-    IAccessible *TabStrip = GetChildElement(top, false, 0);
-    if(CheckAccessibleRole(TabStrip, ROLE_SYSTEM_PAGETABLIST))
+    IAccessible *TabStrip = FindChildElement(top, ROLE_SYSTEM_PAGETABLIST);
+    if(TabStrip)
     {
         long tab_count = 0;
         TraversalAccessible(TabStrip, [&tab_count]
@@ -338,15 +365,34 @@ bool IsOnlyOneTab(IAccessible* top)
         TabStrip->Release();
         return tab_count<=1;
     }
+    else
+    {
+        if (top) DebugLog(L"IsOnlyOneTab failed");
+    }
     return false;
 }
 
 
-bool IsOnOneBookmarkInner(IAccessible* parent, POINT pt, int n)
+bool IsOnOneBookmarkInner(IAccessible* parent, POINT pt)
 {
     bool flag = false;
-    IAccessible *BookmarkBarView = GetChildElement(parent, false, n);
-    if(CheckAccessibleRole(BookmarkBarView, ROLE_SYSTEM_TOOLBAR))
+
+    // 寻找书签栏
+    IAccessible *BookmarkBarView = NULL;
+    TraversalAccessible(parent, [&BookmarkBarView]
+        (IAccessible* child) {
+            if (GetAccessibleRole(child) == ROLE_SYSTEM_TOOLBAR)
+            {
+                IAccessible *button = GetChildElement(child, false, 1);
+                if (GetAccessibleRole(button) == ROLE_SYSTEM_PUSHBUTTON)
+                {
+                    BookmarkBarView = child;
+                }
+            }
+            return BookmarkBarView != NULL;
+        });
+
+    if(BookmarkBarView)
     {
         TraversalAccessible(BookmarkBarView, [&flag, &pt]
             (IAccessible* child){
@@ -375,7 +421,7 @@ bool IsOnOneBookmark(IAccessible* top, POINT pt)
     if(top)
     {
         // 开启了书签栏长显
-        if(IsOnOneBookmarkInner(top, pt, 2)) return true;
+        if(IsOnOneBookmarkInner(top, pt)) return true;
 
         // 未开启书签栏长显
         IDispatch* dispatch = NULL;
@@ -384,7 +430,7 @@ bool IsOnOneBookmark(IAccessible* top, POINT pt)
             IAccessible* parent = NULL;
             if( S_OK == dispatch->QueryInterface(IID_IAccessible, (void**)&parent))
             {
-                flag = IsOnOneBookmarkInner(parent, pt, 1);
+                flag = IsOnOneBookmarkInner(parent, pt);
                 parent->Release();
             }
             dispatch->Release();
@@ -397,8 +443,8 @@ bool IsOnOneBookmark(IAccessible* top, POINT pt)
 bool IsBlankTab(IAccessible* top)
 {
     bool flag = false;
-    IAccessible *TabStrip = GetChildElement(top, false, 0);
-    if(CheckAccessibleRole(TabStrip, ROLE_SYSTEM_PAGETABLIST))
+    IAccessible *TabStrip = FindChildElement(top, ROLE_SYSTEM_PAGETABLIST);
+    if(TabStrip)
     {
         wchar_t* new_tab_title = NULL;
         TraversalAccessible(TabStrip, [&new_tab_title]
@@ -439,35 +485,45 @@ bool IsBlankTab(IAccessible* top)
 bool IsOmniboxViewFocus(IAccessible* top)
 {
     bool flag = false;
-    if(top)
+
+    // 寻找地址栏
+    IAccessible *ToolbarView = NULL;
+    TraversalAccessible(top, [&ToolbarView]
+        (IAccessible* child) {
+            if (GetAccessibleRole(child) == ROLE_SYSTEM_TOOLBAR)
+            {
+                IAccessible *group = FindChildElement(child, ROLE_SYSTEM_GROUPING);
+                if (group)
+                {
+                    ToolbarView = group;
+                    child->Release();
+                }
+            }
+            return ToolbarView != NULL;
+        });
+
+    if (ToolbarView)
     {
-        IAccessible *ToolbarView = GetChildElement(top, false, 1);
-        if(CheckAccessibleRole(ToolbarView, ROLE_SYSTEM_TOOLBAR))
+        IAccessible *OmniboxViewViews = FindChildElement(ToolbarView, ROLE_SYSTEM_TEXT);
+        if(OmniboxViewViews)
         {
-            TraversalAccessible(ToolbarView, [&flag]
-                (IAccessible* child){
-                    if(GetAccessibleRole(child)==ROLE_SYSTEM_GROUPING)
+            GetAccessibleValue(OmniboxViewViews, [&OmniboxViewViews, &flag]
+                (BSTR bstr){
+                    if(bstr[0]!=0) // 地址栏为空直接跳过
                     {
-                        IAccessible *OmniboxViewViews = GetChildElement(child, false, 1);
-                        if(CheckAccessibleRole(OmniboxViewViews, ROLE_SYSTEM_TEXT))
+                        if( (GetAccessibleState(OmniboxViewViews) & STATE_SYSTEM_FOCUSED) == STATE_SYSTEM_FOCUSED)
                         {
-                            GetAccessibleValue(OmniboxViewViews, [&OmniboxViewViews, &flag]
-                                (BSTR bstr){
-                                    if(bstr[0]!=0) // 地址栏为空直接跳过
-                                    {
-                                        if( (GetAccessibleState(OmniboxViewViews) & STATE_SYSTEM_FOCUSED) == STATE_SYSTEM_FOCUSED)
-                                        {
-                                            flag = true;
-                                        }
-                                    }
-                            });
-                            OmniboxViewViews->Release();
+                            flag = true;
                         }
                     }
-                    return false;
-                });
-            ToolbarView->Release();
+            });
+            OmniboxViewViews->Release();
         }
+        ToolbarView->Release();
+    }
+    else
+    {
+        if (top) DebugLog(L"IsOmniboxViewFocus failed");
     }
     return flag;
 }
@@ -485,6 +541,12 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
     if (nCode==HC_ACTION)
     {
         PMOUSEHOOKSTRUCT pmouse = (PMOUSEHOOKSTRUCT) lParam;
+
+        if(wParam==WM_RBUTTONUP && wheel_tab_ing)
+        {
+            wheel_tab_ing = false;
+            return 1;
+        }
 
         // 处理鼠标手势
         if(MouseGesture)
@@ -514,12 +576,6 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
         if(wParam==WM_MOUSEMOVE || wParam==WM_NCMOUSEMOVE)
         {
             return CallNextHookEx(mouse_hook, nCode, wParam, lParam );;
-        }
-
-        if(wParam==WM_RBUTTONUP && wheel_tab_ing)
-        {
-            wheel_tab_ing = false;
-            return 1;
         }
 
         IAccessible* TopContainerView = GetTopContainerView(pmouse->hwnd);

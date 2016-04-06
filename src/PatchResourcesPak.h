@@ -238,6 +238,12 @@ HANDLE WINAPI MyCreateFile(
     _In_opt_ HANDLE                hTemplateFile
 )
 {
+    // 禁止生成debug.log
+    if(isEndWith(lpFileName, L"debug.log"))
+    {
+        return INVALID_HANDLE_VALUE;
+    }
+
     HANDLE file = RawCreateFile(lpFileName, dwDesiredAccess, dwShareMode,
         lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes,
         hTemplateFile);
@@ -253,8 +259,9 @@ HANDLE WINAPI MyCreateFile(
         }
 
         // 不再需要hook
-        MH_DisableHook(CreateFileW);
+        //MH_DisableHook(CreateFileW);
     }
+
     return file;
 }
 

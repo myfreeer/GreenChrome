@@ -229,16 +229,18 @@ IAccessible* FindChildElement(IAccessible *parent, long role)
     IAccessible* element = NULL;
     if (parent)
     {
-        int i = 1;
-        TraversalAccessible(parent, [&element, &i, &role]
+        TraversalAccessible(parent, [&element, &role]
         (IAccessible* child) {
             if (CheckAccessibleRole(child, role))
             {
                 element = child;
             }
-            i++;
             return element != NULL;
         });
+    }
+    if (parent && !element)
+    {
+        DebugLog(L"FindChildElement %X failed", role);
     }
     return element;
 }
@@ -259,11 +261,12 @@ IAccessible* FindTopContainerView(IAccessible *top)
     {
         if(GetAccessibleRole(BookMark)==ROLE_SYSTEM_TOOLBAR)
         {
-            top = GetChildElement(top, true, 3);
             BookMark->Release();
+            top = GetChildElement(top, true, 3);
         }
         else
         {
+            top->Release();
             top = BookMark;
         }
 
@@ -288,6 +291,10 @@ IAccessible* GetTopContainerView(HWND hwnd)
         if ( S_OK == AccessibleObjectFromWindow(hwnd, OBJID_WINDOW, IID_IAccessible, (void**)&paccMainWindow) )
         {
             TopContainerView = FindTopContainerView(paccMainWindow);
+            if (!TopContainerView)
+            {
+                DebugLog(L"FindTopContainerView failed");
+            }
         }
     }
     return TopContainerView;
@@ -545,6 +552,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
         if(wParam==WM_RBUTTONUP && wheel_tab_ing)
         {
             wheel_tab_ing = false;
+            gesture_mgr.OnRButtonUp(pmouse);
             return 1;
         }
 

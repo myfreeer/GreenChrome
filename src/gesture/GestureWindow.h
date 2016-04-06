@@ -48,7 +48,7 @@ public:
         if(!image_up) return;
 
         RECT rect;
-        ::GetWindowRect(GetTopWnd(main_hwnd), &rect);
+        ::GetWindowRect(main_hwnd, &rect);
 
         int width = rect.right - rect.left;
         int height = rect.bottom - rect.top;
@@ -126,14 +126,14 @@ public:
 
     LRESULT OnUserHwnd(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
     {
-        main_hwnd = (HWND)wParam;
+        main_hwnd = GetTopWnd((HWND)wParam);
         return 0;
     }
 
     LRESULT OnUserShow(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
     {
         RECT rect;
-        ::GetWindowRect(GetTopWnd(main_hwnd), &rect);
+        ::GetWindowRect(main_hwnd, &rect);
         ::SetWindowPos(m_hWnd, NULL, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOACTIVATE | SWP_NOZORDER);
 
         DoUpdateWindow();
@@ -157,11 +157,17 @@ public:
         std::wstring action = GetAction(command);
         if (action.empty()) return 0;
 
-        SendKey(action);
+        std::thread th(DelaySendkeys, action);
+        th.detach();
         return 0;
     }
 
 private:
+    static void DelaySendkeys(std::wstring action)
+    {
+        Sleep(50);
+        SendKey(action);
+    }
     HWND GetTopWnd(HWND hwnd)
     {
         while (::GetParent(hwnd) && ::IsWindowVisible(::GetParent(hwnd)))

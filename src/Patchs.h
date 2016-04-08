@@ -146,6 +146,7 @@ void MakePortable(const wchar_t *iniPath)
 
 
 // bool PluginServiceImpl::NPAPIPluginsSupported()
+// "Plugin.NPAPIStatus"
 // chromium/content/browser/plugin_service_impl.cc
 void RecoveryNPAPI(const wchar_t *iniPath)
 {

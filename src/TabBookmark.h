@@ -162,7 +162,7 @@ template<typename Function>
 void TraversalAccessible(IAccessible *node, Function f)
 {
     long childCount = 0;
-    if( S_OK == node->get_accChildCount(&childCount) && childCount)
+    if( node && S_OK == node->get_accChildCount(&childCount) && childCount )
     {
         VARIANT* varChildren = (VARIANT*)malloc(sizeof(VARIANT) * childCount);
         if( S_OK == AccessibleChildren(node, 0, childCount, varChildren, &childCount) )
@@ -386,7 +386,9 @@ bool IsOnOneBookmarkInner(IAccessible* parent, POINT pt)
 
     // 寻找书签栏
     IAccessible *BookmarkBarView = NULL;
-    TraversalAccessible(parent, [&BookmarkBarView]
+    if (parent)
+    {
+        TraversalAccessible(parent, [&BookmarkBarView]
         (IAccessible* child) {
             if (GetAccessibleRole(child) == ROLE_SYSTEM_TOOLBAR)
             {
@@ -398,6 +400,7 @@ bool IsOnOneBookmarkInner(IAccessible* parent, POINT pt)
             }
             return BookmarkBarView != NULL;
         });
+    }
 
     if(BookmarkBarView)
     {
@@ -495,7 +498,9 @@ bool IsOmniboxViewFocus(IAccessible* top)
 
     // 寻找地址栏
     IAccessible *ToolbarView = NULL;
-    TraversalAccessible(top, [&ToolbarView]
+    if (top)
+    {
+        TraversalAccessible(top, [&ToolbarView]
         (IAccessible* child) {
             if (GetAccessibleRole(child) == ROLE_SYSTEM_TOOLBAR)
             {
@@ -508,6 +513,7 @@ bool IsOmniboxViewFocus(IAccessible* top)
             }
             return ToolbarView != NULL;
         });
+    }
 
     if (ToolbarView)
     {

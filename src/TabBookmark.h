@@ -231,16 +231,12 @@ IAccessible* FindChildElement(IAccessible *parent, long role)
     {
         TraversalAccessible(parent, [&element, &role]
         (IAccessible* child) {
-            if (CheckAccessibleRole(child, role))
+            if (GetAccessibleRole(child) == role)
             {
                 element = child;
             }
             return element != NULL;
         });
-    }
-    if (parent && !element)
-    {
-        DebugLog(L"FindChildElement %X failed", role);
     }
     return element;
 }
@@ -392,13 +388,15 @@ bool IsOnOneBookmarkInner(IAccessible* parent, POINT pt)
         (IAccessible* child) {
             if (GetAccessibleRole(child) == ROLE_SYSTEM_TOOLBAR)
             {
-                IAccessible *button = GetChildElement(child, false, 1);
-                if (GetAccessibleRole(button) == ROLE_SYSTEM_PUSHBUTTON)
+                IAccessible *group = FindChildElement(child, ROLE_SYSTEM_GROUPING);
+                if (group==NULL)
                 {
                     BookmarkBarView = child;
+                    return true;
                 }
+                group->Release();
             }
-            return BookmarkBarView != NULL;
+            return false;
         });
     }
 
@@ -497,27 +495,28 @@ bool IsOmniboxViewFocus(IAccessible* top)
     bool flag = false;
 
     // 寻找地址栏
-    IAccessible *ToolbarView = NULL;
+    IAccessible *LocationBarView = NULL;
     if (top)
     {
-        TraversalAccessible(top, [&ToolbarView]
+        TraversalAccessible(top, [&LocationBarView]
         (IAccessible* child) {
             if (GetAccessibleRole(child) == ROLE_SYSTEM_TOOLBAR)
             {
                 IAccessible *group = FindChildElement(child, ROLE_SYSTEM_GROUPING);
                 if (group)
                 {
-                    ToolbarView = group;
+                    LocationBarView = group;
                     child->Release();
+                    return true;
                 }
             }
-            return ToolbarView != NULL;
+            return false;
         });
     }
 
-    if (ToolbarView)
+    if (LocationBarView)
     {
-        IAccessible *OmniboxViewViews = FindChildElement(ToolbarView, ROLE_SYSTEM_TEXT);
+        IAccessible *OmniboxViewViews = FindChildElement(LocationBarView, ROLE_SYSTEM_TEXT);
         if(OmniboxViewViews)
         {
             GetAccessibleValue(OmniboxViewViews, [&OmniboxViewViews, &flag]
@@ -532,7 +531,7 @@ bool IsOmniboxViewFocus(IAccessible* top)
             });
             OmniboxViewViews->Release();
         }
-        ToolbarView->Release();
+        LocationBarView->Release();
     }
     else
     {
@@ -719,7 +718,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                 return CallNextHookEx(keyboard_hook, nCode, wParam, lParam );
             }
 
-            IAccessible* TopContainerView = GetTopContainerView(GetForegroundWindow());
+            IAccessible* TopContainerView = GetTopContainerView(GetFocus());
             if( !(GetKeyState(VK_MENU) & KEY_PRESSED) && IsOmniboxViewFocus(TopContainerView) )
             {
                 if(!NotBlankTab || !IsBlankTab(TopContainerView))

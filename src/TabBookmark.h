@@ -193,6 +193,17 @@ void TraversalAccessible(IAccessible *node, Function f)
     }
 }
 
+long GetChildCount(IAccessible *node)
+{
+    int count = 0;
+    TraversalAccessible(node, [&count]
+    (IAccessible* child) {
+        count++;
+        return false;
+    });
+    return count;
+}
+
 IAccessible* GetChildElement(IAccessible *parent, bool aoto_release, int index)
 {
     IAccessible* element = NULL;
@@ -358,13 +369,13 @@ bool IsOnlyOneTab(IAccessible* top)
     {
         long tab_count = 0;
         TraversalAccessible(TabStrip, [&tab_count]
-            (IAccessible* child){
-                if(GetAccessibleRole(child)==ROLE_SYSTEM_PAGETAB)
-                {
-                    tab_count++;
-                }
-                return false;
-            });
+        (IAccessible* child) {
+            if (GetAccessibleRole(child) == ROLE_SYSTEM_PAGETAB && GetChildCount(child) != 1)
+            {
+                tab_count++;
+            }
+            return false;
+        });
         TabStrip->Release();
         return tab_count<=1;
     }

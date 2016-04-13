@@ -1,5 +1,7 @@
 ﻿wchar_t html_file[MAX_PATH];
 
+bool RemoveUpdateError = false;
+
 DWORD resources_pak_size = 0;
 
 #pragma pack(push)
@@ -89,6 +91,25 @@ void CustomNewTab(uint8_t *buffer)
     }
 }
 
+void RemovePakUpdateError(uint8_t *buffer)
+{
+    BYTE search_start[] = R"(container.hidden = status == 'disabled';)";
+
+    BYTE patch[]  = R"(container.hidden = status  = 'disabled';)";
+    size_t patch_size = sizeof(patch) - 1;
+
+    uint8_t* start = memmem(buffer, resources_pak_size, search_start, sizeof(search_start) - 1);
+    if(start)
+    {
+        // 打补丁
+        memcpy(start, patch, patch_size);
+    }
+    else
+    {
+        DebugLog(L"RemovePakUpdateError failed");
+    }
+}
+
 void BuildAboutDescription(uint8_t *buffer)
 {
     BYTE search_start[] = R"(
@@ -160,6 +181,12 @@ HANDLE WINAPI MyMapViewOfFile(
             {
                 // 自定义新标签
                 CustomNewTab((BYTE*)buffer);
+            }
+
+            if(RemoveUpdateError)
+            {
+                //移除更新错误
+                RemovePakUpdateError((BYTE*)buffer);
             }
 
             // 构造关于描述
@@ -268,6 +295,7 @@ HANDLE WINAPI MyCreateFile(
 void PatchResourcesPak(const wchar_t *iniPath)
 {
     GetPrivateProfileStringW(L"基本设置", L"新标签页面", L"", html_file, MAX_PATH, iniPath);
+    RemoveUpdateError = GetPrivateProfileIntW(L"基本设置", L"移除更新错误", 0, iniPath)==1;
 
     // 扩展环境变量
     std::wstring path = ExpandEnvironmentPath(html_file);

@@ -193,15 +193,20 @@ void TraversalAccessible(IAccessible *node, Function f)
     }
 }
 
-long GetChildCount(IAccessible *node)
+long GetButtonCount(IAccessible *node, int &count)
 {
-    int count = 0;
-    TraversalAccessible(node, [&count]
+    count = 0;
+    bool flag = false;//标记是否有子节点
+    TraversalAccessible(node, [&flag, &count]
     (IAccessible* child) {
-        count++;
+        if (GetAccessibleRole(child) == ROLE_SYSTEM_PUSHBUTTON)
+        {
+            count++;
+        }
+        flag = true;
         return false;
     });
-    return count;
+    return flag;
 }
 
 IAccessible* GetChildElement(IAccessible *parent, bool aoto_release, int index)
@@ -368,12 +373,34 @@ bool IsOnlyOneTab(IAccessible* top)
     if(TabStrip)
     {
         long tab_count = 0;
-        TraversalAccessible(TabStrip, [&tab_count]
+        bool closing = false;
+        TraversalAccessible(TabStrip, [&tab_count, &closing]
         (IAccessible* child) {
-            if (GetAccessibleRole(child) == ROLE_SYSTEM_PAGETAB && GetChildCount(child) != 1)
+            if (GetAccessibleRole(child) == ROLE_SYSTEM_PAGETAB)
             {
-                tab_count++;
-            }
+                if (closing)
+                {
+                    //已经找到一个正在关闭的标签了，其它的都算正常标签
+                    tab_count++;
+                }
+                else
+                {
+                    //如果有关闭按钮才算标签
+                    int count = 0;
+                    if (GetButtonCount(child, count))
+                    {
+                        if (count == 0)
+                            closing = true;
+                        else
+                            tab_count++;
+                    }
+                    else
+                    {
+                        //没有子节点，比如固定标签页
+                        tab_count++;
+                    }
+                }
+                }
             return false;
         });
         TabStrip->Release();
@@ -723,11 +750,6 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                 open_url_ing = false;
                 return CallNextHookEx(keyboard_hook, nCode, wParam, lParam );
             }
-            if(close_tab_ing)
-            {
-                close_tab_ing = false;
-                return CallNextHookEx(keyboard_hook, nCode, wParam, lParam );
-            }
 
             IAccessible* TopContainerView = GetTopContainerView(GetFocus());
             if( !(GetKeyState(VK_MENU) & KEY_PRESSED) && IsOmniboxViewFocus(TopContainerView) )
@@ -749,6 +771,12 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                 SendKeys(VK_MENU, VK_RETURN);
                 return 1;
             }
+        }
+
+        if (wParam == 'W' && close_tab_ing)
+        {
+            close_tab_ing = false;
+            return CallNextHookEx(keyboard_hook, nCode, wParam, lParam);
         }
 
         if(wParam=='W' && (GetKeyState(VK_CONTROL) & KEY_PRESSED) && (!(GetKeyState(VK_SHIFT) & KEY_PRESSED)) && KeepLastTab)

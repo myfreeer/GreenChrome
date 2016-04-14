@@ -379,6 +379,18 @@ void SendKey(std::wstring &keys)
     ::SendInput((UINT)inputs.size(), &inputs[0], sizeof(INPUT));
 }
 
+// 发送鼠标消息
+void SendOneMouse(int mouse)
+{
+    INPUT input[1];
+    memset(input, 0, sizeof(input));
+
+    input[0].type = INPUT_MOUSE;
+
+    input[0].mi.dwFlags = mouse;
+    ::SendInput(1, input, sizeof(INPUT));
+}
+
 //从资源载入图片
 bool ImageFromIDResource(const wchar_t *name, Image *&pImg)
 {

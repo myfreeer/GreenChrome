@@ -583,6 +583,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     static bool close_tab_ing = false;
     static bool wheel_tab_ing = false;
+    static bool ignore_mouse_event = false;
 
     bool close_tab = false;
     bool keep_tab = false;
@@ -595,7 +596,10 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
         if(wParam==WM_RBUTTONUP && wheel_tab_ing)
         {
             wheel_tab_ing = false;
-            gesture_mgr.OnRButtonUp(pmouse);
+            if (MouseGesture)
+            {
+                gesture_mgr.OnRButtonUp(pmouse, true);
+            }
             return 1;
         }
 
@@ -620,6 +624,28 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             if(handled)
             {
                 return 1;
+            }
+        }
+
+        if (RightTabSwitch)
+        {
+            if (wParam == WM_RBUTTONDOWN)
+            {
+                if (!ignore_mouse_event)
+                {
+                    return 1;
+                }
+            }
+            if (wParam == WM_RBUTTONUP)
+            {
+                if (!ignore_mouse_event)
+                {
+                    ignore_mouse_event = true;
+                    SendOneMouse(MOUSEEVENTF_RIGHTDOWN);
+                    SendOneMouse(MOUSEEVENTF_RIGHTUP);
+                    return 1;
+                }
+                ignore_mouse_event = false;
             }
         }
 

@@ -31,7 +31,7 @@ public:
     }
 
     //鼠标右键弹起
-    bool OnRButtonUp(PMOUSEHOOKSTRUCT pmouse)
+    bool OnRButtonUp(PMOUSEHOOKSTRUCT pmouse, bool ignore = false)
     {
         if(!ignore_mouse_event && running_)
         {
@@ -42,9 +42,12 @@ public:
             }
             else
             {
-                ignore_mouse_event = true;
-                SendOneMouse(MOUSEEVENTF_RIGHTDOWN);
-                SendOneMouse(MOUSEEVENTF_RIGHTUP);
+                if (!ignore)
+                {
+                    ignore_mouse_event = true;
+                    SendOneMouse(MOUSEEVENTF_RIGHTDOWN);
+                    SendOneMouse(MOUSEEVENTF_RIGHTUP);
+                }
             }
             running_ = false;
             recognition_ = false;
@@ -85,17 +88,6 @@ public:
             }
         }
         return false;
-    }
-private:
-    void SendOneMouse(int mouse)
-    {
-        INPUT input[1];
-        memset(input, 0, sizeof(input));
-
-        input[0].type = INPUT_MOUSE;
-
-        input[0].mi.dwFlags = mouse;
-        ::SendInput(1, input, sizeof(INPUT));
     }
 private:
     bool running_;

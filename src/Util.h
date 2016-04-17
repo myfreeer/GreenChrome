@@ -1,15 +1,24 @@
-﻿#define MAX_SIZE 32767
+﻿#include <cctype>
+#include <algorithm>
+
+#define MAX_SIZE 32767
 
 // 打印调试信息
 void DebugLog(const wchar_t* format, ...)
 {
-    static wchar_t temp[4096];
-
     va_list args;
-    va_start(args, format);
 
-    _vsnwprintf_s(temp, 4096, 4096, format, args);
-    OutputDebugString(temp);
+    va_start(args, format);
+    size_t length = _vscwprintf(format, args);
+    va_end(args);
+
+    wchar_t* buffer = (wchar_t*)malloc((length + 1) * sizeof(wchar_t));
+    va_start(args, format);
+    _vsnwprintf_s(buffer, length + 1, length, format, args);
+    va_end(args);
+
+    OutputDebugStringW(buffer);
+    free(buffer);
 }
 
 // 如果需要给路径加引号
@@ -43,6 +52,49 @@ void ReplaceStringInPlace(std::wstring& subject, const std::wstring& search, con
     while ((pos = subject.find(search, pos)) != std::wstring::npos) {
         subject.replace(pos, search.length(), replace);
         pos += replace.length();
+    }
+}
+
+void ReplaceStringInPlace(std::string& subject, const std::string& search, const std::string& replace)
+{
+    size_t pos = 0;
+    while ((pos = subject.find(search, pos)) != std::string::npos) {
+        subject.replace(pos, search.length(), replace);
+        pos += replace.length();
+    }
+}
+
+// 压缩HTML
+std::string &ltrim(std::string &s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
+    return s;
+}
+std::string &rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+    return s;
+}
+std::string &trim(std::string &s) {
+    return ltrim(rtrim(s));
+}
+std::vector<std::string> split(const std::string &text, char sep) {
+    std::vector<std::string> tokens;
+    std::size_t start = 0, end = 0;
+    while ((end = text.find(sep, start)) != std::string::npos) {
+        std::string temp = text.substr(start, end - start);
+        tokens.push_back(temp);
+        start = end + 1;
+    }
+    std::string temp = text.substr(start);
+    tokens.push_back(temp);
+    return tokens;
+}
+void compression_html(std::string& html)
+{
+    auto lines = split(html, '\n');
+    html.clear();
+    for ( auto &line : lines)
+    {
+        html += trim(line);
     }
 }
 

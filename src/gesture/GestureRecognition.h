@@ -1,4 +1,4 @@
-﻿wchar_t str[][4] = { L"", L"↑", L"→", L"↓", L"←", L"↗", L"↘", L"↙", L"↖"};
+﻿wchar_t str[][4] = { L"", L"↑", L"→", L"↓", L"←"};
 
 //手势识别
 class GestureRecognition
@@ -32,26 +32,26 @@ public:
             return result;
         }
 
-        int count[9] = {0};
+        int count[5] = {0};
 
         POINT last_point = points[0];
         int last_result = 0;
 
         for (size_t i = 1; i < points.size(); ++i)
         {
-            //小于4像素忽略
+            //小于x像素忽略
             if (GetDistance(points[i], last_point) <= 2) continue;
 
             int orientation = GetOrientation(points[i], last_point);
             count[orientation]++;
-            for(int j = 0; j < 9; j++)
+            for(int j = 1; j < 5; j++)
             {
-                if(count[j]>6 && last_result!=j)
+                if(count[j]>=3 && last_result!=j)
                 {
                     //
                     result += str[j];
                     last_result = j;
-                    for(int k = 0; k < 9; k++) count[k]=0;
+                    for(int k = 0; k < 5; k++) count[k]=0;
                 }
             }
 
@@ -93,30 +93,27 @@ private:
         int orientation = 0;
         int x = a.x - b.x;
         int y = a.y - b.y;
-        float delta = 2.414f;
+        float delta = 1.414f;
         if (x >= 0 && y <= 0)
         {
             //第一象限
             y *= -1;
-            if (x > y && delta*y < x) orientation = 2;
-            if (x < y && delta*x < y) orientation = 1;
-            if(orientation==0) orientation = 5;
+            if (x > y) orientation = 2;
+            else orientation = 1;
             y *= -1;
         }
         else if (x >= 0 && y >= 0)
         {
             //第四象限
-            if (x > y && delta*y < x) orientation = 2;
-            if (x < y && delta*x < y) orientation = 3;
-            if(orientation==0) orientation = 6;
+            if (x > y) orientation = 2;
+            else orientation = 3;
         }
         else if (x<=0 && y>=0)
         {
             //第三象限
             x *= -1;
-            if (x > y && delta*y < x) orientation = 4;
-            if (x < y && delta*x < y) orientation = 3;
-            if(orientation==0) orientation = 7;
+            if (x > y) orientation = 4;
+            else orientation = 3;
             x *= -1;
         }
         else  if (x <= 0 && y <= 0)
@@ -124,9 +121,8 @@ private:
             //第二象限
             x *= -1;
             y *= -1;
-            if (x > y && delta*y < x) orientation = 4;
-            if (x < y && delta*x < y) orientation = 1;
-            if(orientation==0) orientation = 8;
+            if (x > y) orientation = 4;
+            else orientation = 1;
         }
         return orientation;
     }

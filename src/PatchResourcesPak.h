@@ -118,26 +118,36 @@ void BuildAboutDescription(uint8_t *buffer)
     <h1 i18n-content="aboutTitle"></h1>
 )";
 
-    BYTE patch[]  = R"(<body class="uber-frame"><header><h1 i18n-content="aboutTitle"></h1></header><div id="mainview-content"><div id="page-container"><div id="help-page" class="page"><div class="content-area"><div id="about-container"><img id="product-logo" srcset="chrome://theme/current-channel-logo@1x 1x, chrome://theme/current-channel-logo@2x 2x" alt=""><div id="product-description"><h2>Google Chrome With <a href="https://www.shuax.com/?from=greenchrome" target="_blank">GreenChrome</a> <small>v)" RELEASE_VER_STR R"(</small></h2><span i18n-content="aboutProductDescription"></span></div></div><div id="help-container"><button id="get-help" i18n-content="getHelpWithChrome"></button><button id="report-issue" i18n-content="reportAnIssue"></button></div><div id="version-container"><div i18n-content="browserVersion" dir="ltr"></div><div id="update-status-container" hidden><div id="update-status-icon" class="help-page-icon up-to-date"></div><div id="update-status-message-container"><div id="update-status-message" i18n-content="updateCheckStarted"></div><div id="allowed-connection-types-message" hidden></div></div></div><div id="update-buttons-container"><div id="update-percentage" hidden></div><button id="relaunch" i18n-content="relaunch" hidden></button></div></div><div id="product-container"><div i18n-content="productName"></div><div i18n-content="productCopyright"></div><div id="product-license"></div><div id="product-tos"></div></div></div></div></div></div></body>)";
-    size_t patch_size = sizeof(patch) - 1;
-
-    uint8_t* start = memmem(buffer, resources_pak_size, search_start, sizeof(search_start) - 1);
-    if(start)
+    uint8_t* pos = memmem(buffer, resources_pak_size, search_start, sizeof(search_start) - 1);
+    if(pos)
     {
-        BYTE search_end[] = R"(</body>)";
-        uint8_t* end = memmem(start, resources_pak_size - (int)(start - buffer), search_end, sizeof(search_end) - 1);
-        if(end)
-        {
-            size_t free_size = end + (sizeof(search_end) - 1) - start;
-            if ( free_size > patch_size )
+        TraversalPakFile(buffer, [=](uint8_t *begin, uint8_t* end, uint32_t size) {
+            if (pos >= begin && pos <= end)
             {
-                // 打补丁
-                memcpy(start, patch, patch_size);
+                // 压缩HTML以备写入补丁信息
+                std::string html((char*)begin, size);
+                compression_html(html);
 
-                // 填充空格
-                memset(start + patch_size, ' ', free_size - patch_size);
+                char prouct_title[] = u8R"(<br><div>您正在使用 <a href="https://www.shuax.com/?from=greenchrome" target="_blank">GreenChrome )" RELEASE_VER_STR R"(</a>，如果喜欢它，可以 <a href="https://www.shuax.com/donate.html" target="_blank">鼓励作者</a> 继续完善。</div></div><div id="product-container">)";
+                ReplaceStringInPlace(html, R"(</div><div id="product-container">)", prouct_title);
+
+                if (html.length() <= size)
+                {
+                    // 写入修改
+                    memcpy(begin, html.c_str(), html.length());
+
+                    // 填充空格
+                    memset(begin + html.length(), ' ', size - html.length());
+                }
+                else
+                {
+                    DebugLog(L"BuildAboutDescription size failed");
+                }
+
+                return true;
             }
-        }
+            return false;
+        });
     }
     else
     {

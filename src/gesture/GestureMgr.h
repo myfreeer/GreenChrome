@@ -1,9 +1,4 @@
-﻿#include <mutex>
-#include <chrono>
-#include <thread>
-#include <condition_variable>
-
-// 识别是否启用手势
+﻿// 识别是否启用手势
 class GestureMgr
 {
 public:

@@ -200,16 +200,20 @@ void CustomCommand(const wchar_t *iniPath, const wchar_t *exeFolder, const wchar
 
     if (CreateProcessW(exePath, (LPWSTR)my_command_line.c_str(), NULL, NULL, false, CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | CREATE_DEFAULT_ERROR_MODE, NULL, 0, &si, &pi))
     {
-        WaitForSingleObject(pi.hProcess, INFINITE);
+        if(first_run)
+        {
+            WaitForSingleObject(pi.hProcess, INFINITE);
 
-        // 结束时杀掉启动时运行的程序
-        KillAtEnd(iniPath, program_handles);
+            // 结束时杀掉启动时运行的程序
+            KillAtEnd(iniPath, program_handles);
 
-        // 结束时运行
-        LaunchAtEnd(iniPath, exeFolder);
+            // 结束时运行
+            LaunchAtEnd(iniPath, exeFolder);
+        }
 
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
+        
         ExitProcess(0);
     }
     else

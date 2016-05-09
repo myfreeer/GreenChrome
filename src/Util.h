@@ -139,10 +139,10 @@ HANDLE RunExecute(const wchar_t *command, WORD show = SW_SHOW)
 
 // 加载资源内容
 template<typename Function>
-bool LoadFromResource(const wchar_t *type, const wchar_t *name, Function f)
+bool LoadFromResource(const char *type, const char *name, Function f)
 {
     bool result = false;
-    HRSRC res = FindResource(hInstance, name, type);
+    HRSRC res = FindResourceA(hInstance, name, type);
     if (res)
     {
         HGLOBAL header = LoadResource(hInstance, res);
@@ -177,7 +177,7 @@ EXPORT ReleaseIni(const wchar_t *exePath, wchar_t *iniPath)
     }
 
     // 从资源中释放默认配置文件
-    LoadFromResource(L"INI", L"CONFIG", [&](const char *data, DWORD size)
+    LoadFromResource("INI", "CONFIG", [&](const char *data, DWORD size)
     {
         FILE *fp = _wfopen(iniPath, L"wb");
         if (fp)
@@ -444,9 +444,9 @@ void SendOneMouse(int mouse)
 }
 
 //从资源载入图片
-bool ImageFromIDResource(const wchar_t *name, Image *&pImg)
+bool ImageFromIDResource(const char *name, Image *&pImg)
 {
-    LoadFromResource(L"PNG", name, [&](const char *data, DWORD size)
+    LoadFromResource("PNG", name, [&](const char *data, DWORD size)
     {
         HGLOBAL m_hMem = GlobalAlloc(GMEM_FIXED, size);
         BYTE* pmem = (BYTE*)GlobalLock(m_hMem);

@@ -153,19 +153,20 @@ void KillAtEnd(const wchar_t *iniPath, std::vector <HANDLE> &program_handles)
 {
     if(GetPrivateProfileInt(L"基本设置", L"自动结束运行程序", 1, iniPath)==1)
     {
-        for(auto rogram_handle : program_handles)
+        for(auto &program_handle : program_handles)
         {
-            TerminateProcess(rogram_handle, 0);
+            TerminateProcess(program_handle, 0);
         }
     }
 }
 
 // 是否是首先启动的dll
+HANDLE FirstRun;
 bool IsFirstRun()
 {
     bool first_run = false;
-    CreateMutex(NULL, TRUE, L"{56A17F97-9F89-4926-8415-446649F25EB5}");
-    if (GetLastError() != ERROR_ALREADY_EXISTS)
+    FirstRun = CreateMutexW(NULL, TRUE, L"{56A17F97-9F89-4926-8415-446649F25EB5}");
+    if (GetLastError() == ERROR_SUCCESS)
     {
          first_run = true;
     }
@@ -173,16 +174,27 @@ bool IsFirstRun()
     return first_run;
 }
 
-void CustomCommand(const wchar_t *iniPath, const wchar_t *exeFolder, const wchar_t *exePath)
+// 只启动一次的功能
+bool OnceFeature(const wchar_t *iniPath)
 {
-    // 只启动一次的功能
     bool first_run = IsFirstRun();
-    std::vector <HANDLE> program_handles;
-    if(first_run)
+    if (first_run)
     {
         // 启动老板键
         Bosskey(iniPath);
 
+        // 启动设置页面
+        SettingWeb(iniPath);
+    }
+    return first_run;
+}
+
+// 自定义启动参数
+void CustomCommand(const wchar_t *iniPath, const wchar_t *exeFolder, const wchar_t *exePath, bool first_run)
+{
+    std::vector <HANDLE> program_handles;
+    if (first_run)
+    {
         // 启动更新器
         LaunchUpdater(iniPath, exeFolder);
 
@@ -209,11 +221,14 @@ void CustomCommand(const wchar_t *iniPath, const wchar_t *exeFolder, const wchar
 
             // 结束时运行
             LaunchAtEnd(iniPath, exeFolder);
+            
+            // 释放句柄
+            CloseHandle(FirstRun);
         }
 
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
-        
+
         ExitProcess(0);
     }
     else

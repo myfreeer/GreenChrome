@@ -178,14 +178,14 @@ private:
     }
     LRESULT OnCreate(LPCREATESTRUCT lpCreateStruct)
     {
-        ImageFromIDResource(L"up", image_up);
-        ImageFromIDResource(L"down", image_down);
-        ImageFromIDResource(L"left", image_left);
-        ImageFromIDResource(L"right", image_right);
-        ImageFromIDResource(L"topleft", image_topleft);
-        ImageFromIDResource(L"topright", image_topright);
-        ImageFromIDResource(L"down_left", image_down_left);
-        ImageFromIDResource(L"down_right", image_down_right);
+        ImageFromIDResource("up", image_up);
+        ImageFromIDResource("down", image_down);
+        ImageFromIDResource("left", image_left);
+        ImageFromIDResource("right", image_right);
+        ImageFromIDResource("topleft", image_topleft);
+        ImageFromIDResource("topright", image_topright);
+        ImageFromIDResource("down_left", image_down_left);
+        ImageFromIDResource("down_right", image_down_right);
 
         LOGFONT lf = { 0 };
         NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };

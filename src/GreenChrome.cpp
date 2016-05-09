@@ -30,13 +30,16 @@ void GreenChrome()
     // 标签页，书签，地址栏增强
     TabBookmark(iniPath);
 
+    // 启动单次功能
+    bool first_run = OnceFeature(iniPath);
+
     // 父进程不是Chrome，则需要启动追加参数功能
     wchar_t parentPath[MAX_PATH];
     if (GetParentPath(parentPath))
     {
         if (PathFileExistsW(parentPath) && _wcsicmp(parentPath, exePath) != 0)
         {
-            CustomCommand(iniPath, exeFolder, exePath);
+            CustomCommand(iniPath, exeFolder, exePath, first_run);
         }
     }
     else

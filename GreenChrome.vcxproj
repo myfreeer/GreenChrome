@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Bosskey.h" />
+    <ClInclude Include="src\cJSON\cJSON.h" />
     <ClInclude Include="src\CustomCommand.h" />
     <ClInclude Include="src\gesture\GestureMgr.h" />
     <ClInclude Include="src\gesture\GestureRecognition.h" />
@@ -36,20 +37,24 @@
     <ClInclude Include="src\minhook\src\HDE\table32.h" />
     <ClInclude Include="src\minhook\src\HDE\table64.h" />
     <ClInclude Include="src\minhook\src\trampoline.h" />
+    <ClInclude Include="src\mongoose\mongoose.h" />
     <ClInclude Include="src\Parsekeys.h" />
     <ClInclude Include="src\PatchResourcesPak.h" />
     <ClInclude Include="src\Patchs.h" />
+    <ClInclude Include="src\SettingWeb.h" />
     <ClInclude Include="src\TabBookmark.h" />
     <ClInclude Include="src\Util.h" />
     <ClInclude Include="src\winmm.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\cJSON\cJSON.c" />
     <ClCompile Include="src\GreenChrome.cpp" />
     <ClCompile Include="src\minhook\src\buffer.c" />
     <ClCompile Include="src\minhook\src\HDE\hde32.c" />
     <ClCompile Include="src\minhook\src\HDE\hde64.c" />
     <ClCompile Include="src\minhook\src\hook.c" />
     <ClCompile Include="src\minhook\src\trampoline.c" />
+    <ClCompile Include="src\mongoose\mongoose.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GreenChrome.rc" />

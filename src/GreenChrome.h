@@ -9,11 +9,13 @@
 
 #define _MMSYSTEM_H
 #define _INC_MMSYSTEM
+#define WIN32_LEAN_AND_MEAN
 
 #include <stdio.h>
 #include <windows.h>
 #include <tchar.h>
 #include <shlwapi.h>
+#include <shellapi.h>
 #include <shlobj.h>
 #include <psapi.h>
 #include <oleacc.h>
@@ -46,10 +48,15 @@ void GreenChrome();
 HMODULE hInstance;
 
 #include "..\version.h"
-#include "minhook\include\MinHook.h"
 
 #include "winmm.h"
 #include "util.h"
+
+#include "minhook\include\MinHook.h"
+
+#include "mongoose\mongoose.h"
+#include "SettingWeb.h"
+
 #include "patchs.h"
 #include "PatchResourcesPak.h"
 #include "GetParent.h"

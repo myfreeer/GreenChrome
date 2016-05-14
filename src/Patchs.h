@@ -47,13 +47,21 @@ void CustomUserData(const wchar_t *iniPath)
 
     if(user_data_path[0])
     {
+        //GetDefaultUserDataDirectory
+        //*result = result->Append(chrome::kUserDataDirname);
+        //const wchar_t kUserDataDirname[] = L"User Data";
         #ifdef _WIN64
         BYTE search[] = {0x48, 0x8B, 0xD1, 0xB9, 0x6E, 0x00, 0x00, 0x00, 0xE8};
         uint8_t *get_user_data = SearchModule(L"chrome.dll", search, sizeof(search));
-        if(get_user_data && *(get_user_data + 17) == 0x0F&& *(get_user_data + 18) == 0x84)
+        if (get_user_data && *(get_user_data + 17) == 0x0F && *(get_user_data + 18) == 0x84)
         {
-            BYTE patch[] = {0x90, 0xE9};
+            BYTE patch[] = { 0x90, 0xE9 };
             WriteMemory(get_user_data + 17, patch, sizeof(patch));
+        }
+        else if (get_user_data && *(get_user_data + 15) == 0x0F && *(get_user_data + 16) == 0x84)
+        {
+            BYTE patch[] = { 0x90, 0xE9 };
+            WriteMemory(get_user_data + 15, patch, sizeof(patch));
         }
         else
         {
@@ -69,7 +77,17 @@ void CustomUserData(const wchar_t *iniPath)
         }
         else
         {
-            DebugLog(L"patch user_data_path failed");
+            BYTE search[] = {0x6A, 0x6E, 0x8B, 0xD7 };
+            uint8_t *get_user_data = SearchModule(L"chrome.dll", search, sizeof(search));
+            if (get_user_data && *(get_user_data + 12) == 0x74)
+            {
+                BYTE patch[] = { 0xEB };
+                WriteMemory(get_user_data + 12, patch, sizeof(patch));
+            }
+            else
+            {
+                DebugLog(L"patch user_data_path failed");
+            }
         }
         #endif
 

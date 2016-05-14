@@ -1,5 +1,6 @@
 ﻿#include <cctype>
 #include <algorithm>
+#include <map>
 
 #define MAX_SIZE 32767
 
@@ -471,4 +472,139 @@ bool isEndWith(const wchar_t *path,const wchar_t* ext)
     size_t len2 = wcslen(ext);
     if(len2>len1) return false;
     return !_memicmp(path + len1 - len2,ext,len2*sizeof(wchar_t));
+}
+
+auto GetSection(const wchar_t *name, const wchar_t *iniPath)
+{
+    wchar_t section_content[MAX_SIZE];
+    GetPrivateProfileSectionW(name, section_content, MAX_SIZE, iniPath);
+
+    std::vector <std::wstring> contents;
+
+    wchar_t *content = section_content;
+    while (content && *content)
+    {
+        contents.push_back(content);
+        content += wcslen(content) + 1;
+    }
+
+    return contents;
+}
+
+void SetSection(const wchar_t *name, std::vector <std::wstring> &values, const wchar_t *iniPath)
+{
+    FILE * fp = _wfopen(iniPath, L"r, ccs=UNICODE");
+    if (fp)
+    {
+        std::vector <std::wstring> contents;
+
+        wchar_t line[1024];
+        while (fgetws(line, 1024, fp)) {
+            line[wcscspn(line, L"\r\n")] = 0;
+            contents.push_back(line);
+        }
+        fclose(fp);
+
+        int index = 0;
+        int begin = 0;
+        int end = (int)contents.size();
+
+        std::wstring section_name(L"[");
+        section_name += name;
+        section_name += L"]";
+        for (auto &content : contents)
+        {
+            if (begin == 0)
+            {
+                if (_wcsicmp(content.c_str(), section_name.c_str()) == 0)
+                {
+                    begin = index + 1;
+                }
+            }
+            else
+            {
+                if (content[0] == '[' && content[content.length() - 1] == ']')
+                {
+                    end = index - 1;
+                    break;
+                }
+            }
+            index++;
+        }
+
+        for (int i = end; i > begin; i--)
+        {
+            if (contents[i].length()==0)
+            {
+                end = i - 1;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        std::map <std::wstring, bool> value_map;
+        for (auto &value : values)
+        {
+            value_map.insert({ value, false });
+        }
+
+        std::vector <int> need_delete;
+        for (int i = begin; i <= end; i++)
+        {
+            if (contents[i][0] == ';' || contents[i][0] == '#' || contents[i].length() == 0)
+            {
+                //注释或空行跳过
+            }
+            else
+            {
+                if (value_map.find(contents[i]) != value_map.end())
+                {
+                    if (value_map[contents[i]]==false)
+                    {
+                        //尚未找到
+                        value_map[contents[i]] = true;
+                    }
+                    else
+                    {
+                        //已经有相同的值，删除
+                        need_delete.push_back(i);
+                    }
+                }
+                else
+                {
+                    //删除不存在的值
+                    need_delete.push_back(i);
+                }
+            }
+        }
+
+        //删除需要删除的行
+        for (auto it = need_delete.rbegin(); it != need_delete.rend(); it++)
+        {
+            contents.erase(contents.begin() + *it);
+        }
+
+        //插入尚未找到的内容
+        for (auto &value : values)
+        {
+            if (value_map[value] == false)
+            {
+                end++;
+                contents.insert(contents.begin() + end, value);
+            }
+        }
+
+        fp = _wfopen(iniPath, L"w, ccs=UNICODE");
+        if (fp)
+        {
+            for (auto &content : contents)
+            {
+                fputws(content.c_str(), fp);
+                fputws(L"\n", fp);
+            }
+            fclose(fp);
+        }
+    }
 }

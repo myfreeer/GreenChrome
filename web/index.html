@@ -43,7 +43,7 @@
             <div>你也可以打开程序目录下的 <code>GreenChrome.ini</code> 配置文件手动修改</div>
           </div>
           <div class="alert alert-warning">
-            <div>部分设置需要重启浏览器后才能生效</div>
+            <div>部分设置需要重新启动浏览器后才能生效</div>
           </div>
 
           <a name="base-setting"></a>
@@ -54,19 +54,19 @@
 
               <div class="form-inline">
                 <div class="form-control-static">数据目录：</div>
-                <input type="text" class="form-control kv" id="UserData" data-section="基本设置" data-name="数据目录">
+                <input type="text" class="form-control kv" style="width:70%;" id="UserData" data-section="基本设置" data-name="数据目录">
                 <p class="text-muted">　类似<code>--user-data-dir</code>强制重定向用户数据目录，但不会导致双图标</p>
               </div>
 
               <div class="form-inline">
                 <p class="form-control-static">老板键：</p>
-                <input type="text" class="form-control kv" id="BossKey" data-section="基本设置" data-name="老板键">
+                <input type="text" class="form-control kv" style="width:70%;" id="BossKey" data-section="基本设置" data-name="老板键">
                 <p class="text-muted">　按下老板键后可隐藏所有Chrome窗口，再次按下即可恢复</p>
               </div>
 
               <div class="form-inline">
                 <p class="form-control-static">新标签页面：</p>
-                <input type="text" class="form-control kv" id="HTMLFile" data-section="基本设置" data-name="新标签页面">
+                <input type="text" class="form-control kv" style="width:70%;" id="HTMLFile" data-section="基本设置" data-name="新标签页面">
                 <div class="text-muted">　可以自定义新标签页为本地html文件，不填不修改，推荐使用<code>%app%</code>来指定位置</div>
                 <div class="text-muted">　文件只能<code>1k</code>左右，超过部分会被自动截断</div>
                 <p class="text-muted">　有个内置的演示效果，名字为<code>%demo%</code></p>
@@ -203,7 +203,12 @@
               <ul class="list-group" id="additional_parameter">
                 <!-- <li class="list-group-item">disable-directwrite-for-ui<a href="#"><span class="glyphicon glyphicon-remove pull-right"></span></a></li> -->
               </ul>
-              <div class="text-warning">很遗憾，暂不支持在此处修改，请手动编辑配置文件</div>
+              <div class="input-group">
+                <input type="text" class="form-control" placeholder="输入您要追加的参数">
+                <span class="input-group-btn">
+                  <button class="btn btn-primary add_section" type="button" data-section="追加参数">增加</button>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -217,7 +222,12 @@
               <div class="text-muted">如果<code>%app%</code>之类的展开后含有空格，也是需要添加引号的</div>
               <ul class="list-group" id="start_program">
               </ul>
-              <div class="text-warning">很遗憾，暂不支持在此处修改，请手动编辑配置文件</div>
+              <div class="input-group">
+                <input type="text" class="form-control" placeholder="输入您要启动时运行的程序">
+                <span class="input-group-btn">
+                  <button class="btn btn-primary add_section" type="button" data-section="启动时运行">增加</button>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -231,7 +241,12 @@
               <div class="text-muted">通常用于清理一些残留程序，例如结束Lantern后取消系统代理</div>
               <ul class="list-group" id="close_program">
               </ul>
-              <div class="text-warning">很遗憾，暂不支持在此处修改，请手动编辑配置文件</div>
+              <div class="input-group">
+                <input type="text" class="form-control" placeholder="输入您要关闭时运行的程序">
+                <span class="input-group-btn">
+                  <button class="btn btn-primary add_section" type="button" data-section="关闭时运行">增加</button>
+                </span>
+              </div>
             </div>
           </div>
 

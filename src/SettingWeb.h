@@ -93,15 +93,13 @@ static void http_get(struct mg_connection *nc, struct http_message *hm)
 void ReadList(cJSON *root, const wchar_t *iniPath, const wchar_t *name)
 {
     cJSON *list = cJSON_CreateArray();
-    wchar_t additional_parameter[MAX_SIZE];
-    GetPrivateProfileSectionW(name, additional_parameter, MAX_SIZE, iniPath);
 
-    wchar_t *parameter_ptr = additional_parameter;
-    while (parameter_ptr && *parameter_ptr)
+    auto contents = GetSection(name, iniPath);
+    for (auto &content : contents)
     {
-        cJSON_AddItemToArray(list, cJSON_CreateString(utf16to8(parameter_ptr).c_str()));
-        parameter_ptr += wcslen(parameter_ptr) + 1;
+        cJSON_AddItemToArray(list, cJSON_CreateString(utf16to8(content.c_str()).c_str()));
     }
+
     cJSON_AddItemToObject(root, utf16to8(name).c_str(), list);
 }
 void ReadValue(cJSON *node, const wchar_t *iniPath, const wchar_t *section, const wchar_t *name)
@@ -151,7 +149,7 @@ static void http_post(struct mg_connection *nc, struct http_message *hm)
         cJSON_AddItemToObject(root, utf16to8(L"鼠标手势开关").c_str(), node);
 
         char *str = cJSON_PrintUnformatted(root);
-        int len = strlen(str);
+        int len = (int)strlen(str);
         cJSON_Delete(root);
 
         mg_send_head(nc, 200, len, "Content-Type: text/xml; charset=utf-8");
@@ -170,31 +168,50 @@ static void http_post(struct mg_connection *nc, struct http_message *hm)
 
         mg_send_head(nc, 200, 2, "Content-Type: text/xml; charset=utf-8");
         mg_send(nc, "{}", 2);
-    /*
-    } else if (mg_vcmp(&hm->uri, "/set_section") == 0) {
-        char section[200];
-        char value[200];
-        mg_get_http_var(&hm->body, "section", section, sizeof(section));
-        mg_get_http_var(&hm->body, "value", value, sizeof(value));
-        //DebugLog(L"set_setting %s %s=%s", utf8to16(section).c_str(), utf8to16(name).c_str(), utf8to16(value).c_str());
-
-        std::wstring wvalue = utf8to16(value);
-        wvalue += L'\0';
-
-        ::WritePrivateProfileSection(utf8to16(section).c_str(), NULL, iniPath);
-        ::WritePrivateProfileSection(utf8to16(section).c_str(), wvalue.c_str(), iniPath);
-
-        mg_send_head(nc, 200, 2, "Content-Type: text/xml; charset=utf-8");
-        mg_send(nc, "{}", 2);
-     */
     } else if (mg_vcmp(&hm->uri, "/del_setting") == 0) {
         char section[200];
         char name[200];
         mg_get_http_var(&hm->body, "section", section, sizeof(section));
         mg_get_http_var(&hm->body, "name", name, sizeof(name));
-        //DebugLog(L"set_setting %s %s=%s", utf8to16(section).c_str(), utf8to16(name).c_str());
+        //DebugLog(L"del_setting %s %s=%s", utf8to16(section).c_str(), utf8to16(name).c_str());
 
         ::WritePrivateProfileString(utf8to16(section).c_str(), utf8to16(name).c_str(), NULL, iniPath);
+
+        mg_send_head(nc, 200, 2, "Content-Type: text/xml; charset=utf-8");
+        mg_send(nc, "{}", 2);
+    } else if (mg_vcmp(&hm->uri, "/add_section") == 0) {
+        char section[200];
+        char value[200];
+        mg_get_http_var(&hm->body, "section", section, sizeof(section));
+        mg_get_http_var(&hm->body, "value", value, sizeof(value));
+
+        auto contents = GetSection(utf8to16(section).c_str(), iniPath);
+        contents.push_back(utf8to16(value));
+        SetSection(utf8to16(section).c_str(), contents, iniPath);
+
+        mg_send_head(nc, 200, 2, "Content-Type: text/xml; charset=utf-8");
+        mg_send(nc, "{}", 2);
+    }
+    else if (mg_vcmp(&hm->uri, "/del_section") == 0) {
+        char section[200];
+        char value[200];
+        mg_get_http_var(&hm->body, "section", section, sizeof(section));
+        mg_get_http_var(&hm->body, "value", value, sizeof(value));
+
+        auto contents = GetSection(utf8to16(section).c_str(), iniPath);
+
+        int index = 0;
+        for (auto &content : contents)
+        {
+            if (_wcsicmp(content.c_str(), utf8to16(value).c_str()) == 0)
+            {
+                contents.erase(contents .begin() + index);
+                SetSection(utf8to16(section).c_str(), contents, iniPath);
+                break;
+            }
+            index++;
+        }
+
 
         mg_send_head(nc, 200, 2, "Content-Type: text/xml; charset=utf-8");
         mg_send(nc, "{}", 2);

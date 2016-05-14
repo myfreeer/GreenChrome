@@ -27,13 +27,9 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
                 command_line.push_back(L"--always-authorize-plugins");
             }
 
-            wchar_t additional_parameter[MAX_SIZE];
-            GetPrivateProfileSectionW(L"追加参数", additional_parameter, MAX_SIZE, iniPath);
-
-            wchar_t *parameter_ptr = additional_parameter;
-            while (parameter_ptr && *parameter_ptr)
+            auto contents = GetSection(L"追加参数", iniPath);
+            for (auto &parameter_str : contents)
             {
-                std::wstring parameter_str = parameter_ptr;
                 std::size_t equal = parameter_str.find(L"=");
                 if (equal != std::wstring::npos)
                 {
@@ -54,8 +50,6 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
                     //添加到参数
                     command_line.push_back( parameter_str );
                 }
-
-                parameter_ptr += wcslen(parameter_ptr) + 1;
             }
         }
     }
@@ -74,14 +68,11 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
 
 void LaunchAtStart(const wchar_t *iniPath, const wchar_t *exeFolder, std::vector <HANDLE> &program_handles)
 {
-    wchar_t start_program[MAX_SIZE];
-    GetPrivateProfileSectionW(L"启动时运行", start_program, MAX_SIZE, iniPath);
-
-    wchar_t *program_ptr = start_program;
-    while (program_ptr && *program_ptr)
+    auto contents = GetSection(L"启动时运行", iniPath);
+    for (auto &content : contents)
     {
         // 扩展环境变量
-        std::wstring program = ExpandEnvironmentPath(program_ptr);
+        std::wstring program = ExpandEnvironmentPath(content);
 
         // 扩展%app%
         ReplaceStringInPlace(program, L"%app%", exeFolder);
@@ -92,8 +83,6 @@ void LaunchAtStart(const wchar_t *iniPath, const wchar_t *exeFolder, std::vector
         {
             program_handles.push_back(program_handle);
         }
-
-        program_ptr += wcslen(program_ptr) + 1;
     }
 }
 
@@ -129,22 +118,17 @@ void LaunchUpdater(const wchar_t *iniPath, const wchar_t *exeFolder)
 // 退出时运行额外程序
 void LaunchAtEnd(const wchar_t *iniPath, const wchar_t *exeFolder)
 {
-    wchar_t close_program[MAX_SIZE];
-    GetPrivateProfileSectionW(L"关闭时运行", close_program, MAX_SIZE, iniPath);
-
-    wchar_t *program_ptr = close_program;
-    while (program_ptr && *program_ptr)
+    auto contents = GetSection(L"关闭时运行", iniPath);
+    for (auto &content : contents)
     {
         // 扩展环境变量
-        std::wstring program = ExpandEnvironmentPath(program_ptr);
+        std::wstring program = ExpandEnvironmentPath(content);
 
         // 扩展%app%
         ReplaceStringInPlace(program, L"%app%", exeFolder);
 
         // 运行程序
         RunExecute(program.c_str(), SW_HIDE);
-
-        program_ptr += wcslen(program_ptr) + 1;
     }
 }
 

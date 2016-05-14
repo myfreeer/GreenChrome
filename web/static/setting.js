@@ -38,11 +38,12 @@ function Render(response)
 	$('#FrontNewTab').attr("checked",response["界面增强"]["前台打开新标签"]=="1");
 
 	// 追加参数
+	var remove_section = '<a href="#" class="remove_section"><span class="glyphicon glyphicon-remove pull-right"></span></a>'
 	$("#additional_parameter").empty()
 	for(var i = 0 ;i < response["追加参数"].length; i++)
 	{
 		var parameter = response["追加参数"][i];
-		$("#additional_parameter").append('<li class="list-group-item">' + parameter + '</li>');
+		$("#additional_parameter").append('<li class="list-group-item" data-section="追加参数">' + parameter + remove_section + '</li>');
 	}
 
 	// 启动时运行
@@ -50,7 +51,7 @@ function Render(response)
 	for(var i = 0 ;i < response["启动时运行"].length; i++)
 	{
 		var parameter = response["启动时运行"][i];
-		$("#start_program").append('<li class="list-group-item">' + parameter + '</li>');
+		$("#start_program").append('<li class="list-group-item" data-section="启动时运行">' + parameter + remove_section + '</li>');
 	}
 
 	// 关闭时运行
@@ -58,8 +59,19 @@ function Render(response)
 	for(var i = 0 ;i < response["关闭时运行"].length; i++)
 	{
 		var parameter = response["关闭时运行"][i];
-		$("#close_program").append('<li class="list-group-item">' + parameter + '</li>');
+		$("#close_program").append('<li class="list-group-item" data-section="关闭时运行">' + parameter + remove_section + '</li>');
 	}
+
+	$(".remove_section").click(function() {
+		var parameter = {}
+		parameter.section = $(this).parent().data("section")
+		parameter.value = $(this).parent().text()
+
+		AJAX("del_section", parameter, function(response){
+			get_setting();
+		});
+		return false;
+	});
 
 	// 鼠标手势开关
 	$('#MouseGesture').attr("checked",response["鼠标手势开关"]["启用"]=="1");
@@ -188,13 +200,18 @@ $(document).ready(function() {
 		});
 	});
 
-	// $(".add_section").click(function() {
-	// 	var parameter = {}
-	// 	parameter.section = $(this).data("section")
-	// 	parameter.value = $(this).parents(".input-group").find("input").val()
+	$(".add_section").click(function() {
+		var input = $(this).parents(".input-group").find("input")
+		var parameter = {}
+		parameter.section = $(this).data("section")
+		parameter.value = input.val()
+		if(parameter.value=="") return false;
 
-	// 	AJAX("set_section", parameter, function(response){
-	// 		get_setting();
-	// 	});
-	// });
+		AJAX("add_section", parameter, function(response){
+			input.val("")
+			get_setting();
+		});
+
+		return false;
+	});
 });

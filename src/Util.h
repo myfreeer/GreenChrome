@@ -608,3 +608,38 @@ void SetSection(const wchar_t *name, std::vector <std::wstring> &values, const w
         }
     }
 }
+
+// 获得系统语言
+std::string GetDefaultLanguage()
+{
+	char language[MAX_PATH];
+	if (!GetLocaleInfoA(GetUserDefaultUILanguage(), LOCALE_SISO639LANGNAME, language, MAX_PATH))
+	{
+		return "zh-CN";
+	}
+	char country[MAX_PATH];
+	if (!GetLocaleInfoA(GetUserDefaultUILanguage(), LOCALE_SISO3166CTRYNAME, country, MAX_PATH))
+	{
+		return std::string(language);
+	}
+
+	return std::string(language) + "-" + country;
+}
+
+// 编码转换
+std::wstring utf8to16(const char* src)
+{
+	std::vector<wchar_t> buffer;
+	buffer.resize(MultiByteToWideChar(CP_UTF8, 0, src, -1, 0, 0));
+	MultiByteToWideChar(CP_UTF8, 0, src, -1, &buffer[0], (int)buffer.size());
+	return std::wstring(&buffer[0]);
+}
+
+// 编码转换
+std::string utf16to8(const wchar_t* src)
+{
+	std::vector<char> buffer;
+	buffer.resize(WideCharToMultiByte(CP_UTF8, 0, src, -1, NULL, 0, NULL, NULL));
+	WideCharToMultiByte(CP_UTF8, 0, src, -1, &buffer[0], (int)buffer.size(), NULL, NULL);
+	return std::string(&buffer[0]);
+}

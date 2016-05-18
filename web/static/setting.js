@@ -1,12 +1,14 @@
+var interface = "http://127.0.0.1"
 function AJAX(url, data, callback)
 {
 	$.ajax({
-		url: url,
+		url: interface + "/" + url,
 		type: "post",
 		async: true,
 		data: data,
+		timeout: 1000,
 		error: function(e) {
-			alert("发生未知错误");
+			// alert("发生未知错误");
 		},
 		dataType: "json",
 		success: function(response) {
@@ -173,11 +175,61 @@ function get_setting()
 	})
 }
 
+var pleaseWaitDiv
+var interface_ok = false
+var wait_close = false
+function probe_interface(port)
+{
+	if(port>10020)
+	{
+		if(!interface_ok) pleaseWaitDiv.modal('hide');
+		interface = interface + ":" + port
+		$("#debug").parent().removeClass("hide")
+		wait_close = true
+		return;
+	}
+
+	$.ajax({
+		url: interface + ":" + port + "/get_setting",
+		type: "post",
+		async: true,
+		timeout: 100,
+		data: {},
+		error: function(e) {
+			probe_interface(port + 1);
+		},
+		dataType: "json",
+		success: function(response) {
+			pleaseWaitDiv.modal('hide');
+			interface = interface + ":" + port
+			$("#debug").text(interface)
+			interface_ok = true
+			Render(response)
+		}
+	});
+}
+
 $(document).ready(function() {
-	console.log("不想要本宝宝的，在[基本设置]写上：人家不要WEB啦=1")
 	$('form,input,select,textarea').attr("autocomplete", "off");
 
-	get_setting();
+	pleaseWaitDiv = $('<div class="modal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true" style="padding-top:15%; overflow-y:visible;">' +
+		'<div class="modal-dialog modal-m">' +
+		'<div class="modal-content">' +
+			'<div class="modal-header"><h4 style="margin:0;">正在连接到GreenChrome设置</h4></div>' +
+			'<div class="modal-body">' +
+				'<div class="progress progress-striped active" style="margin-bottom:0;"><div class="progress-bar" style="width: 100%"></div></div>' +
+				'<h2></h2>' +
+			'</div>' +
+		'</div></div></div>');
+	setTimeout(function() {
+		if(!interface_ok && !wait_close)
+		{
+			pleaseWaitDiv.modal();
+		}
+	}, 100)
+
+	$.support.cors = true;
+	probe_interface(10000);
 
 	$(".kv").on('input', function(e){
 		var parameter = {}

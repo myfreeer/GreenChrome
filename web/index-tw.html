@@ -7,7 +7,7 @@
     <link id="favicon" rel="icon" type="image/png" href="/static/favicon.png">
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
     <meta name="format-detection" content="telephone=no"/>
-    <link href="http://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+    <link href="static/bootstrap.min.css" rel="stylesheet">
     <style>
       body {
         font-family: 'Segoe UI',Arial,'Microsoft Yahei',sans-serif;
@@ -21,7 +21,7 @@
     <div class="container">
       <div class="row">
         <div class="col-sm-2 hidden-sm hidden-xs">
-          <h1></h1>
+          <h2></h2>
           <ul class="nav nav-pills nav-stacked affix">
             <li><a href="#base-setting">基本設定</a></li>
             <li><a href="#UI-enhance">介面增強</a></li>
@@ -34,9 +34,9 @@
 
         <div class="col-sm-12 col-md-8">
 
-          <h1>設定 GreenChrome</h1>
+          <h2>設定 GreenChrome</h2>
           <hr>
-          <div class="alert alert-info">
+          <div class="well well-sm">
             <div>GreenChrome是一個由 <a class="alert-link" href="https://www.shuax.com/?greenchrome" target="_blank">shuax</a> 開發，用來增強Chrome的免費工具</div>
             <div>如果喜歡它，可以 <a class="alert-link" href="https://www.shuax.com/donate.html" target="_blank">鼓勵作者</a>，以讓作者繼續完善此工具</div>
             <div>路徑支援 <code>%appdata%</code> 這樣的環境變數，特別的 <code>%app%</code> 代表程式目前所在目錄</div>
@@ -46,10 +46,13 @@
           <div class="alert alert-warning">
             <div>部分設定需要重新啟動瀏覽器以後才能生效</div>
           </div>
+          <div class="alert alert-danger hide">
+            <div id="debug">目前無法連線到GreenChrome設定</div>
+          </div>
 
           <a name="base-setting"></a>
           <hr>
-          <h3>基本設定</h3>
+          <h4>基本設定</h4>
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
 
@@ -112,7 +115,7 @@
 
           <a name="UI-enhance"></a>
           <hr>
-          <h3>介面增強</h3>
+          <h4>介面增強</h4>
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
 
@@ -196,7 +199,7 @@
 
           <a name="append-command"></a>
           <hr>
-          <h3>追加參數</h3>
+          <h4>追加參數</h4>
 
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
@@ -215,7 +218,7 @@
 
           <a name="start-run"></a>
           <hr>
-          <h3>啟動時執行</h3>
+          <h4>啟動時執行</h4>
 
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
@@ -234,7 +237,7 @@
 
           <a name="end-run"></a>
           <hr>
-          <h3>關閉時執行</h3>
+          <h4>關閉時執行</h4>
 
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
@@ -253,7 +256,7 @@
 
           <a name="mouse-gesture"></a>
           <hr>
-          <h3>滑鼠手勢</h3>
+          <h4>滑鼠手勢</h4>
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
 
@@ -307,7 +310,8 @@
         </div>
       </div>
     </div>
-    <script src="http://cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+    <script src="static/jquery.min.js"></script>
+    <script src="static/bootstrap.min.js"></script>
     <script src="static/setting.js"></script>
   </body>
 </html>

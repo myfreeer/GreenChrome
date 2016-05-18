@@ -23,7 +23,12 @@ public:
 
     void DrawGestureTrack(Graphics &graphics)
     {
-        Pen pen(Color(200, 152, 204, 0), 3);
+		wchar_t color[MAX_PATH];
+		GetPrivateProfileStringW(L"鼠标手势", L"轨迹颜色", L"98CC00", color, MAX_PATH, ini_path);
+		byte r, g, b;
+		swscanf(color, L"%02hhX%02hhX%02hhX", &r, &g, &b);
+
+        Pen pen(Color(200, r, g, b), (Gdiplus::REAL)::GetPrivateProfileIntW(L"鼠标手势", L"轨迹粗细", 3, ini_path));
 
         std::vector<POINT> points = gesture_recognition.get_points();
         if(points.size()<2) return;

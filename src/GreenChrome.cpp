@@ -15,6 +15,9 @@ void GreenChrome()
     wchar_t iniPath[MAX_PATH];
     ReleaseIni(exeFolder, iniPath);
 
+	// 启动单次功能
+	bool first_run = OnceFeature(iniPath);
+
     // 自定义用户数据目录
     CustomUserData(iniPath);
 
@@ -29,9 +32,6 @@ void GreenChrome()
 
     // 标签页，书签，地址栏增强
     TabBookmark(iniPath);
-
-    // 启动单次功能
-    bool first_run = OnceFeature(iniPath);
 
     // 父进程不是Chrome，则需要启动追加参数功能
     wchar_t parentPath[MAX_PATH];

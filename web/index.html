@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>设置 GreenChrome</title>
-    <link id="favicon" rel="icon" type="image/png" href="/static/favicon.png">
+    <link id="favicon" rel="icon" type="image/png" href="static/favicon.png">
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
     <meta name="format-detection" content="telephone=no"/>
-    <link href="http://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+    <link href="static/bootstrap.min.css" rel="stylesheet">
     <style>
       body {
         font-family: 'Segoe UI',Arial,'Microsoft Yahei',sans-serif;
@@ -21,7 +21,7 @@
     <div class="container">
       <div class="row">
         <div class="col-sm-2 hidden-sm hidden-xs">
-          <h1></h1>
+          <h2></h2>
           <ul class="nav nav-pills nav-stacked affix">
             <li><a href="#base-setting">基本设置</a></li>
             <li><a href="#UI-enhance">界面增强</a></li>
@@ -34,9 +34,9 @@
 
         <div class="col-sm-12 col-md-8">
 
-          <h1>设置 GreenChrome</h1>
+          <h2>设置 GreenChrome</h2>
           <hr>
-          <div class="alert alert-info">
+          <div class="well well-sm">
             <div>GreenChrome是一个由 <a class="alert-link" href="https://www.shuax.com/?greenchrome" target="_blank">shuax</a> 开发的增强Chrome的免费工具</div>
             <div>如果喜欢它，可以 <a class="alert-link" href="https://www.shuax.com/donate.html" target="_blank">鼓励作者</a> 继续完善</div>
             <div>路径支持 <code>%appdata%</code> 这样的环境变量，特别的 <code>%app%</code> 代表程序当前所在目录</div>
@@ -45,10 +45,13 @@
           <div class="alert alert-warning">
             <div>部分设置需要重新启动浏览器后才能生效</div>
           </div>
+          <div class="alert alert-danger hide">
+            <div id="debug">当前无法连接到GreenChrome设置</div>
+          </div>
 
           <a name="base-setting"></a>
           <hr>
-          <h3>基本设置</h3>
+          <h4>基本设置</h4>
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
 
@@ -111,7 +114,7 @@
 
           <a name="UI-enhance"></a>
           <hr>
-          <h3>界面增强</h3>
+          <h4>界面增强</h4>
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
 
@@ -195,7 +198,7 @@
 
           <a name="append-command"></a>
           <hr>
-          <h3>追加参数</h3>
+          <h4>追加参数</h4>
 
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
@@ -214,7 +217,7 @@
 
           <a name="start-run"></a>
           <hr>
-          <h3>启动时运行</h3>
+          <h4>启动时运行</h4>
 
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
@@ -233,7 +236,7 @@
 
           <a name="end-run"></a>
           <hr>
-          <h3>关闭时运行</h3>
+          <h4>关闭时运行</h4>
 
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
@@ -252,7 +255,7 @@
 
           <a name="mouse-gesture"></a>
           <hr>
-          <h3>鼠标手势</h3>
+          <h4>鼠标手势</h4>
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
 
@@ -306,7 +309,8 @@
         </div>
       </div>
     </div>
-    <script src="http://cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+    <script src="static/jquery.min.js"></script>
+    <script src="static/bootstrap.min.js"></script>
     <script src="static/setting.js"></script>
   </body>
 </html>

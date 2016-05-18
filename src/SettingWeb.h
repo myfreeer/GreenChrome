@@ -1,94 +1,6 @@
 #include "cJSON\cJSON.h"
-// 编码转换
-std::wstring utf8to16(const char* src)
-{
-    std::vector<wchar_t> buffer;
-    buffer.resize(MultiByteToWideChar(CP_UTF8, 0, src, -1, 0, 0));
-    MultiByteToWideChar(CP_UTF8, 0, src, -1, &buffer[0], (int)buffer.size());
-    return std::wstring(&buffer[0]);
-}
 
-// 编码转换
-std::string utf16to8(const wchar_t* src)
-{
-    std::vector<char> buffer;
-    buffer.resize(WideCharToMultiByte(CP_UTF8, 0, src, -1, NULL, 0, NULL, NULL));
-    WideCharToMultiByte(CP_UTF8, 0, src, -1, &buffer[0], (int)buffer.size(), NULL, NULL);
-    return std::string(&buffer[0]);
-}
-
-static void SendStaticFile(struct mg_connection *nc, const char *path)
-{
-    bool result = LoadFromResource("WEB", path, [&](const char *data, DWORD size)
-    {
-        mg_send_head(nc, 200, size, NULL);
-        mg_send(nc, data, size);
-    });
-
-    if (!result)
-    {
-        const char reason[] = "Not Found";
-        mg_send_head(nc, 404, sizeof(reason) - 1, NULL);
-        mg_send(nc, reason, sizeof(reason) - 1);
-    }
-}
-
-static int has_prefix(const struct mg_str *uri, const struct mg_str *prefix)
-{
-    return uri->len > prefix->len && memcmp(uri->p, prefix->p, prefix->len) == 0;
-}
-
-// 获得系统语言
-std::wstring GetDefaultLanguage()
-{
-    wchar_t language[MAX_PATH];
-    if (!GetLocaleInfo(GetUserDefaultUILanguage(), LOCALE_SISO639LANGNAME, language, MAX_PATH))
-    {
-        return L"zh-CN";
-    }
-    wchar_t country[MAX_PATH];
-    if (!GetLocaleInfo(GetUserDefaultUILanguage(), LOCALE_SISO3166CTRYNAME, country, MAX_PATH))
-    {
-        return std::wstring(language);
-    }
-
-    return std::wstring(language) + L"-" + country;
-}
-
-static void http_get(struct mg_connection *nc, struct http_message *hm)
-{
-    static const struct mg_str static_file = MG_MK_STR("/static/");
-    if (mg_vcmp(&hm->uri, "/") == 0)
-    {
-        // 首页
-        std::wstring Language = GetDefaultLanguage();
-        if (_wcsicmp(Language.c_str(), L"zh-CN") == 0) {
-            // 简体中文
-            SendStaticFile(nc, "index.html");
-        } else if (_wcsicmp(Language.c_str(), L"zh-TW") == 0) {
-            // 台湾
-            SendStaticFile(nc, "index-tw.html");
-        } else if (_wcsicmp(Language.c_str(), L"zh-HK") == 0) {
-            // 香港
-            SendStaticFile(nc, "index-tw.html");
-        } else {
-            // 其它
-            SendStaticFile(nc, "index.html");
-        }
-    }
-    else if (has_prefix(&hm->uri, &static_file))
-    {
-        //静态文件
-        char path[MAX_PATH];
-        sprintf(path, "%.*s", (int)hm->uri.len - 1, hm->uri.p + 1);
-        SendStaticFile(nc, path);
-    }
-    else
-    {
-        //404
-        SendStaticFile(nc, "404.html");
-    }
-}
+const char extra_header[] = "Content-Type: text/xml; charset=utf-8\r\nAccess-Control-Allow-Origin: http://settings.shuax.com";
 
 void ReadList(cJSON *root, const wchar_t *iniPath, const wchar_t *name)
 {
@@ -102,6 +14,7 @@ void ReadList(cJSON *root, const wchar_t *iniPath, const wchar_t *name)
 
     cJSON_AddItemToObject(root, utf16to8(name).c_str(), list);
 }
+
 void ReadValue(cJSON *node, const wchar_t *iniPath, const wchar_t *section, const wchar_t *name)
 {
     wchar_t value[256];
@@ -109,11 +22,12 @@ void ReadValue(cJSON *node, const wchar_t *iniPath, const wchar_t *section, cons
     cJSON_AddItemToObject(node, utf16to8(name).c_str(), cJSON_CreateString(utf16to8(value).c_str()));
 }
 
-static void http_post(struct mg_connection *nc, struct http_message *hm)
+static bool http_post(struct mg_connection *nc, struct http_message *hm)
 {
     const wchar_t *iniPath = (const wchar_t *)nc->mgr->user_data;
 
-    if (mg_vcmp(&hm->uri, "/get_setting") == 0) {
+    if (mg_vcmp(&hm->uri, "/get_setting") == 0)
+	{
         cJSON *root = cJSON_CreateObject();
         ReadList(root, iniPath, L"追加参数");
         ReadList(root, iniPath, L"启动时运行");
@@ -152,10 +66,12 @@ static void http_post(struct mg_connection *nc, struct http_message *hm)
         int len = (int)strlen(str);
         cJSON_Delete(root);
 
-        mg_send_head(nc, 200, len, "Content-Type: text/xml; charset=utf-8");
+        mg_send_head(nc, 200, len, extra_header);
         mg_send(nc, str, len);
         free(str);
-    } else if (mg_vcmp(&hm->uri, "/set_setting") == 0) {
+    }
+	else if (mg_vcmp(&hm->uri, "/set_setting") == 0)
+	{
         char section[200];
         char name[200];
         char value[200];
@@ -166,9 +82,11 @@ static void http_post(struct mg_connection *nc, struct http_message *hm)
 
         ::WritePrivateProfileString(utf8to16(section).c_str(), utf8to16(name).c_str(), utf8to16(value).c_str(), iniPath);
 
-        mg_send_head(nc, 200, 2, "Content-Type: text/xml; charset=utf-8");
+        mg_send_head(nc, 200, 2, extra_header);
         mg_send(nc, "{}", 2);
-    } else if (mg_vcmp(&hm->uri, "/del_setting") == 0) {
+    }
+	else if (mg_vcmp(&hm->uri, "/del_setting") == 0)
+	{
         char section[200];
         char name[200];
         mg_get_http_var(&hm->body, "section", section, sizeof(section));
@@ -177,9 +95,11 @@ static void http_post(struct mg_connection *nc, struct http_message *hm)
 
         ::WritePrivateProfileString(utf8to16(section).c_str(), utf8to16(name).c_str(), NULL, iniPath);
 
-        mg_send_head(nc, 200, 2, "Content-Type: text/xml; charset=utf-8");
+        mg_send_head(nc, 200, 2, extra_header);
         mg_send(nc, "{}", 2);
-    } else if (mg_vcmp(&hm->uri, "/add_section") == 0) {
+    }
+	else if (mg_vcmp(&hm->uri, "/add_section") == 0)
+	{
         char section[200];
         char value[200];
         mg_get_http_var(&hm->body, "section", section, sizeof(section));
@@ -189,10 +109,11 @@ static void http_post(struct mg_connection *nc, struct http_message *hm)
         contents.push_back(utf8to16(value));
         SetSection(utf8to16(section).c_str(), contents, iniPath);
 
-        mg_send_head(nc, 200, 2, "Content-Type: text/xml; charset=utf-8");
+        mg_send_head(nc, 200, 2, extra_header);
         mg_send(nc, "{}", 2);
     }
-    else if (mg_vcmp(&hm->uri, "/del_section") == 0) {
+    else if (mg_vcmp(&hm->uri, "/del_section") == 0)
+	{
         char section[200];
         char value[200];
         mg_get_http_var(&hm->body, "section", section, sizeof(section));
@@ -212,13 +133,22 @@ static void http_post(struct mg_connection *nc, struct http_message *hm)
             index++;
         }
 
-
-        mg_send_head(nc, 200, 2, "Content-Type: text/xml; charset=utf-8");
+        mg_send_head(nc, 200, 2, extra_header);
         mg_send(nc, "{}", 2);
-    }else{
-        //404
-        SendStaticFile(nc, "404.html");
     }
+	else
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void not_found(struct mg_connection *nc)
+{
+	const char reason[] = "Not Found";
+	mg_send_head(nc, 404, sizeof(reason) - 1, extra_header);
+	mg_send(nc, reason, sizeof(reason) - 1);
 }
 
 static void http_handler(struct mg_connection *nc, int ev, void *ev_data)
@@ -229,16 +159,18 @@ static void http_handler(struct mg_connection *nc, int ev, void *ev_data)
     {
         struct http_message *hm = (struct http_message *) ev_data;
         //DebugLog(L"%.*S %.*S %.*S", (int)hm->method.len, hm->method.p, (int)hm->uri.len, hm->uri.p, (int)hm->body.len, hm->body.p);
-
-        if (mg_vcmp(&hm->method, "GET") == 0) {
-            http_get(nc, hm);
+		
+		if (mg_vcmp(&hm->method, "POST") == 0)
+		{
+			if (!http_post(nc, hm))
+			{
+				not_found(nc);
+			}
         }
-        else if (mg_vcmp(&hm->method, "POST") == 0) {
-            http_post(nc, hm);
-        }
-        else {
+        else
+		{
             //404
-            SendStaticFile(nc, "404.html");
+			not_found(nc);
         }
         nc->flags |= MG_F_SEND_AND_CLOSE;
     }
@@ -248,21 +180,14 @@ static void http_handler(struct mg_connection *nc, int ev, void *ev_data)
     }
 }
 
-#pragma data_seg(".SHARED")
-int http_port = 0;
-#pragma data_seg()
-#pragma comment(linker, "/section:.SHARED,RWS")
-
 void WebThread(const std::wstring iniPath, const HANDLE ready_event)
 {
     struct mg_mgr mgr;
     struct mg_connection *nc;
 
-    // 延迟一点，否则死锁
-    Sleep(100);
     mg_mgr_init(&mgr, (void *)iniPath.c_str());
 
-    for (http_port = 80; http_port < 65535; http_port++)
+    for (int http_port = 10000; http_port < 10020; http_port++)
     {
         char http_address[1024];
         wsprintfA(http_address, "127.0.0.1:%d", http_port);
@@ -282,7 +207,6 @@ void WebThread(const std::wstring iniPath, const HANDLE ready_event)
     }
     else
     {
-        http_port = 80;
         DebugLog(L"WebThread failed");
     }
     mg_mgr_free(&mgr);
@@ -290,7 +214,7 @@ void WebThread(const std::wstring iniPath, const HANDLE ready_event)
 
 void SettingWeb(const wchar_t *iniPath)
 {
-    if (GetPrivateProfileInt(L"基本设置", L"人家不要WEB啦", 0, iniPath) == 1)
+    if (GetPrivateProfileInt(L"基本设置", L"停用WEB设置", 0, iniPath) == 1)
     {
         return;
     }

@@ -128,9 +128,7 @@ void BuildAboutDescription(uint8_t *buffer)
                 std::string html((char*)begin, size);
                 compression_html(html);
 
-                const char prouct_title_fmt[] = u8R"(<br><div>您正在使用 GreenChrome )" RELEASE_VER_STR u8R"( <button><a href="http://gc.shuax.com:%d" target="_blank" style="text-decoration:none;color:#444;">点击设置</a></button></div></div><div id="product-container">)";
-                char prouct_title[1024];
-                wsprintfA(prouct_title, prouct_title_fmt, http_port);
+                const char prouct_title[] = u8R"(<br><div>您正在使用 GreenChrome )" RELEASE_VER_STR u8R"( <button><a href="http://settings.shuax.com/gc/" target="_blank" style="text-decoration:none;color:#444;">点击设置</a></button></div></div><div id="product-container">)";
                 ReplaceStringInPlace(html, R"(</div><div id="product-container">)", prouct_title);
 
                 if (html.length() <= size)

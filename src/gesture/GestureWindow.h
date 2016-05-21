@@ -23,27 +23,28 @@ public:
 
     void DrawGestureTrack(Graphics &graphics)
     {
-		wchar_t color[MAX_PATH];
-		GetPrivateProfileStringW(L"鼠标手势", L"轨迹颜色", L"98CC00", color, MAX_PATH, ini_path);
-		byte r, g, b;
-		swscanf(color, L"%02hhX%02hhX%02hhX", &r, &g, &b);
+        wchar_t color[MAX_PATH];
+        GetPrivateProfileStringW(L"鼠标手势", L"轨迹颜色", L"98CC00", color, MAX_PATH, ini_path);
+        byte r, g, b;
+        swscanf(color, L"%02hhX%02hhX%02hhX", &r, &g, &b);
 
         Pen pen(Color(200, r, g, b), (Gdiplus::REAL)::GetPrivateProfileIntW(L"鼠标手势", L"轨迹粗细", 3, ini_path));
 
         std::vector<POINT> points = gesture_recognition.get_points();
         if(points.size()<2) return;
 
-        ScreenToClient(&points[0]);
-        POINT last_point = points[0];
-        for (size_t i = 1; i < points.size(); ++i)
+        std::vector<PointF> pnts;
+        for (auto &point : points)
         {
-            if( gesture_recognition.GetDistance(last_point, points[i]) > 4 )
-            {
-                ScreenToClient(&points[i]);
-                graphics.DrawLine(&pen, last_point.x, last_point.y, points[i].x, points[i].y);
-                last_point = points[i];
-            }
+            ScreenToClient(&point);
+
+            PointF pnt;
+            pnt.X = (Gdiplus::REAL)point.x;
+            pnt.Y = (Gdiplus::REAL)point.y;
+            pnts.push_back(pnt);
         }
+
+        graphics.DrawLines(&pen, &pnts[0], pnts.size());
     }
 
     void DrawGestureResult(Graphics &graphics)

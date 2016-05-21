@@ -112,8 +112,29 @@ function Render(response)
 
 			$("#MouseGestureList").append(tr)
 		}
+		else
+		{
+			if(key=="轨迹粗细")
+			{
+				response["鼠标手势"]["轨迹粗细"] = line[1]
+			}
+			if(key=="轨迹颜色")
+			{
+				response["鼠标手势"]["轨迹颜色"] = line[1]
+			}
+		}
 		// $("#close_program").append('<li class="list-group-item">' + parameter + remove + '</li>');
 	}
+
+
+	if(response["鼠标手势"]["轨迹粗细"])
+		$("#TrackThickness").val(response["鼠标手势"]["轨迹粗细"]);
+	else
+		$("#TrackThickness").val("3");
+	if(response["鼠标手势"]["轨迹颜色"])
+		$('#colorpicker').colorpicker("setValue", "#"+response["鼠标手势"]["轨迹颜色"]);
+	else
+		$('#colorpicker').colorpicker("setValue", "#98CC00");
 
 	var add_tr = $('<tr>\
 	<td><input type="text" class="form-control direction" placeholder="输入手势的方向"></td>\
@@ -236,6 +257,17 @@ $(document).ready(function() {
 		parameter.section = $(this).data("section")
 		parameter.name = $(this).data("name")
 		parameter.value = $(this).val()
+
+		AJAX("set_setting", parameter, function(response){
+		});
+	});
+
+
+	$('#colorpicker').colorpicker({format: 'rgb'}).on('changeColor', function (e) {
+		var parameter = {}
+		parameter.section = $(this).data("section")
+		parameter.name = $(this).data("name")
+		parameter.value = e.color.toHex().substring(1).toUpperCase()
 
 		AJAX("set_setting", parameter, function(response){
 		});

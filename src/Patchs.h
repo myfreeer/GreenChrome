@@ -1,4 +1,4 @@
-﻿wchar_t user_data_path[MAX_PATH];
+wchar_t user_data_path[MAX_PATH];
 
 typedef BOOL (WINAPI *pSHGetFolderPath)(
   _In_  HWND   hwndOwner,
@@ -26,6 +26,40 @@ BOOL WINAPI MySHGetFolderPath(
     }
 
     return result;
+}
+
+typedef struct _CRYPTOAPI_BLOB {
+  DWORD cbData;
+  BYTE  *pbData;
+} CRYPT_INTEGER_BLOB, *PCRYPT_INTEGER_BLOB, CRYPT_UINT_BLOB, *PCRYPT_UINT_BLOB, CRYPT_OBJID_BLOB, *PCRYPT_OBJID_BLOB, CERT_NAME_BLOB, CERT_RDN_VALUE_BLOB, *PCERT_NAME_BLOB, *PCERT_RDN_VALUE_BLOB, CERT_BLOB, *PCERT_BLOB, CRL_BLOB, *PCRL_BLOB, DATA_BLOB, *PDATA_BLOB, CRYPT_DATA_BLOB, *PCRYPT_DATA_BLOB, CRYPT_HASH_BLOB, *PCRYPT_HASH_BLOB, CRYPT_DIGEST_BLOB, *PCRYPT_DIGEST_BLOB, CRYPT_DER_BLOB, PCRYPT_DER_BLOB, CRYPT_ATTR_BLOB, *PCRYPT_ATTR_BLOB;
+
+
+BOOL WINAPI MyCryptProtectData(
+  _In_       DATA_BLOB                 *pDataIn,
+  _In_opt_   LPCWSTR                   szDataDescr,
+  _In_opt_   DATA_BLOB                 *pOptionalEntropy,
+  _Reserved_ PVOID                     pvReserved,
+  _In_opt_   CRYPTPROTECT_PROMPTSTRUCT *pPromptStruct,
+  _In_       DWORD                     dwFlags,
+  _Out_      DATA_BLOB                 *pDataOut
+)
+{
+    *pDataOut=*pDataIn;
+    return true;
+}
+
+BOOL WINAPI MyCryptUnprotectData(
+  _In_       DATA_BLOB                 *pDataIn,
+  _Out_opt_  LPWSTR                    *ppszDataDescr,
+  _In_opt_   DATA_BLOB                 *pOptionalEntropy,
+  _Reserved_ PVOID                     pvReserved,
+  _In_opt_   CRYPTPROTECT_PROMPTSTRUCT *pPromptStruct,
+  _In_       DWORD                     dwFlags,
+  _Out_      DATA_BLOB                 *pDataOut
+)
+{
+    *pDataOut=*pDataIn;
+    return true;
 }
 
 void CustomUserData(const wchar_t *iniPath)
@@ -156,6 +190,31 @@ void MakePortable(const wchar_t *iniPath)
             else
             {
                 DebugLog(L"MH_CreateHook GetVolumeInformationW failed:%d", status);
+            }
+        }
+        HMODULE Crypt32 = LoadLibraryW(L"Crypt32.dll");
+        if(Crypt32)
+        {
+            PBYTE CryptProtectData = (PBYTE)GetProcAddress(Crypt32, "CryptProtectData");
+            PBYTE CryptUnprotectData = (PBYTE)GetProcAddress(Crypt32, "CryptUnprotectData");
+
+            MH_STATUS status1 = MH_CreateHook(CryptProtectData, MyCryptProtectData, NULL);
+            if (status1 == MH_OK)
+            {
+                MH_EnableHook(CryptProtectData);
+            }
+            else
+            {
+                DebugLog(L"MH_CreateHook CryptProtectData failed:%d", status);
+            }
+            status1 = MH_CreateHook(CryptUnprotectData, MyCryptUnprotectData, NULL);
+            if (status1 == MH_OK)
+            {
+                MH_EnableHook(CryptUnprotectData);
+            }
+            else
+            {
+                DebugLog(L"MH_CreateHook CryptUnprotectData failed:%d", status);
             }
         }
     }

@@ -104,10 +104,12 @@
 #define NORETURN __attribute__((noreturn))
 #define NOINLINE __attribute__((noinline))
 #define WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#define NOINSTR __attribute__((no_instrument_function))
 #else
 #define NORETURN
 #define NOINLINE
 #define WARN_UNUSED_RESULT
+#define NOINSTR
 #endif /* __GNUC__ */
 
 #ifndef ARRAY_SIZE
@@ -187,6 +189,9 @@
 #endif
 #define random() rand()
 typedef int socklen_t;
+#if _MSC_VER >= 1700
+#include <stdint.h>
+#else
 typedef signed char int8_t;
 typedef unsigned char uint8_t;
 typedef int int32_t;
@@ -195,6 +200,7 @@ typedef short int16_t;
 typedef unsigned short uint16_t;
 typedef __int64 int64_t;
 typedef unsigned __int64 uint64_t;
+#endif
 typedef SOCKET sock_t;
 typedef uint32_t in_addr_t;
 #ifndef UINT16_MAX
@@ -725,6 +731,7 @@ char *inet_ntoa(struct in_addr in);
 int inet_pton(int af, const char *src, void *dst);
 
 struct mg_mgr;
+struct mg_connection;
 
 typedef void (*mg_init_cb)(struct mg_mgr *mgr);
 bool mg_start_task(int priority, int stack_size, mg_init_cb mg_init);
@@ -732,6 +739,8 @@ bool mg_start_task(int priority, int stack_size, mg_init_cb mg_init);
 void mg_run_in_task(void (*cb)(struct mg_mgr *mgr, void *arg), void *cb_arg);
 
 int sl_fs_init();
+
+int sl_set_ssl_opts(struct mg_connection *nc);
 
 #ifdef __cplusplus
 }
@@ -1166,11 +1175,10 @@ int json_emit_va(char *buf, int buf_len, const char *fmt, va_list);
 #ifdef __APPLE__
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
+#if !defined(MG_SOCKET_SIMPLELINK)
 #include <openssl/ssl.h>
-#else
-typedef void *SSL;
-typedef void *SSL_CTX;
 #endif
+#endif /* MG_ENABLE_SSL */
 
 #ifndef MG_VPRINTF_BUFFER_SIZE
 #define MG_VPRINTF_BUFFER_SIZE 100
@@ -1251,8 +1259,17 @@ struct mg_connection {
   size_t recv_mbuf_limit;  /* Max size of recv buffer */
   struct mbuf recv_mbuf;   /* Received data */
   struct mbuf send_mbuf;   /* Data scheduled for sending */
+#if defined(MG_ENABLE_SSL)
+#if !defined(MG_SOCKET_SIMPLELINK)
   SSL *ssl;
   SSL_CTX *ssl_ctx;
+#else
+  char *ssl_cert;
+  char *ssl_key;
+  char *ssl_ca_cert;
+  char *ssl_server_name;
+#endif
+#endif
   time_t last_io_time;              /* Timestamp of the last socket IO */
   double ev_timer_time;             /* Timestamp of the future MG_EV_TIMER */
   mg_event_handler_t proto_handler; /* Protocol-specific event handler */
@@ -1276,10 +1293,11 @@ struct mg_connection {
 #define MG_F_UDP (1 << 1)                /* This connection is UDP */
 #define MG_F_RESOLVING (1 << 2)          /* Waiting for async resolver */
 #define MG_F_CONNECTING (1 << 3)         /* connect() call in progress */
-#define MG_F_SSL_HANDSHAKE_DONE (1 << 4) /* SSL specific */
-#define MG_F_WANT_READ (1 << 5)          /* SSL specific */
-#define MG_F_WANT_WRITE (1 << 6)         /* SSL specific */
-#define MG_F_IS_WEBSOCKET (1 << 7)       /* Websocket specific */
+#define MG_F_SSL (1 << 4)                /* SSL is enabled on the connection */
+#define MG_F_SSL_HANDSHAKE_DONE (1 << 5) /* SSL hanshake has completed */
+#define MG_F_WANT_READ (1 << 6)          /* SSL specific */
+#define MG_F_WANT_WRITE (1 << 7)         /* SSL specific */
+#define MG_F_IS_WEBSOCKET (1 << 8)       /* Websocket specific */
 
 /* Flags that are settable by user */
 #define MG_F_SEND_AND_CLOSE (1 << 10)      /* Push remaining data and close  */
@@ -1396,6 +1414,9 @@ struct mg_bind_opts {
 #ifdef MG_ENABLE_SSL
   /* SSL settings. */
   const char *ssl_cert;    /* Server certificate to present to clients */
+  const char *ssl_key;     /* Private key corresponding to the certificate.
+                              If ssl_cert is set but ssl_key is not, ssl_cert
+                              is used. */
   const char *ssl_ca_cert; /* Verify client certificates with this CA bundle */
 #endif
 };
@@ -1436,6 +1457,9 @@ struct mg_connect_opts {
 #ifdef MG_ENABLE_SSL
   /* SSL settings. */
   const char *ssl_cert;    /* Client certificate to present to the server */
+  const char *ssl_key;     /* Private key corresponding to the certificate.
+                              If ssl_cert is set but ssl_key is not, ssl_cert
+                              is used. */
   const char *ssl_ca_cert; /* Verify server certificate using this CA bundle */
 
   /*
@@ -1509,19 +1533,23 @@ struct mg_connection *mg_connect_opt(struct mg_mgr *mgr, const char *address,
                                      mg_event_handler_t handler,
                                      struct mg_connect_opts opts);
 
+#if defined(MG_ENABLE_SSL) && !defined(MG_SOCKET_SIMPLELINK)
 /*
+ * Note: This function is deprecated, please use SSL options in mg_connect_opt.
+ *
  * Enable SSL for a given connection.
  * `cert` is a server certificate file name for a listening connection,
  * or a client certificate file name for an outgoing connection.
  * Certificate files must be in PEM format. Server certificate file
  * must contain a certificate, concatenated with a private key, optionally
- * concatenated with parameters.
+ * concatenated with DH parameters.
  * `ca_cert` is a CA certificate, or NULL if peer verification is not
  * required.
  * Return: NULL on success, or error message on error.
  */
 const char *mg_set_ssl(struct mg_connection *nc, const char *cert,
                        const char *ca_cert);
+#endif
 
 /*
  * Send data to the connection.
@@ -1665,6 +1693,10 @@ double mg_time();
  * Implementation must ensure that only one callback is invoked at any time.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /* Request that a TCP connection is made to the specified address. */
 void mg_if_connect_tcp(struct mg_connection *nc,
                        const union socket_address *sa);
@@ -1725,6 +1757,10 @@ void mg_if_get_conn_addr(struct mg_connection *nc, int remote,
 
 /* Associate a socket to a connection. */
 void mg_sock_set(struct mg_connection *nc, sock_t sock);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* CS_MONGOOSE_SRC_NET_IF_H_ */
 /*
@@ -2113,10 +2149,12 @@ struct mg_http_multipart_part {
 #define MG_EV_HTTP_CHUNK 102   /* struct http_message * */
 #define MG_EV_SSI_CALL 105     /* char * */
 
+#ifndef MG_DISABLE_HTTP_WEBSOCKET
 #define MG_EV_WEBSOCKET_HANDSHAKE_REQUEST 111 /* NULL */
 #define MG_EV_WEBSOCKET_HANDSHAKE_DONE 112    /* NULL */
 #define MG_EV_WEBSOCKET_FRAME 113             /* struct websocket_message * */
 #define MG_EV_WEBSOCKET_CONTROL_FRAME 114     /* struct websocket_message * */
+#endif
 
 #ifdef MG_ENABLE_HTTP_STREAMING_MULTIPART
 #define MG_EV_HTTP_MULTIPART_REQUEST 121 /* struct http_message */
@@ -2170,6 +2208,7 @@ struct mg_http_multipart_part {
  */
 void mg_set_protocol_http_websocket(struct mg_connection *nc);
 
+#ifndef MG_DISABLE_HTTP_WEBSOCKET
 /*
  * Send websocket handshake to the server.
  *
@@ -2275,6 +2314,7 @@ void mg_send_websocket_framev(struct mg_connection *nc, int op_and_flags,
  */
 void mg_printf_websocket_frame(struct mg_connection *nc, int op_and_flags,
                                const char *fmt, ...);
+#endif /* MG_DISABLE_HTTP_WEBSOCKET */
 
 /*
  * Send buffer `buf` of size `len` to the client using chunked HTTP encoding.
@@ -2702,6 +2742,13 @@ typedef struct mg_str (*mg_fu_fname_fn)(struct mg_connection *nc,
 void mg_file_upload_handler(struct mg_connection *nc, int ev, void *ev_data,
                             mg_fu_fname_fn local_name_fn);
 #endif /* MG_ENABLE_HTTP_STREAMING_MULTIPART */
+
+/*
+ * Authenticate HTTP request against opened passwords file.
+ * Returns 1 if authenticated, 0 otherwise.
+ */
+int mg_http_check_digest_auth(struct http_message *hm, const char *auth_domain,
+                              FILE *fp);
 
 #ifdef __cplusplus
 }

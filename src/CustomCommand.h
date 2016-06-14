@@ -200,14 +200,14 @@ void CustomCommand(const wchar_t *iniPath, const wchar_t *exeFolder, const wchar
         {
             WaitForSingleObject(pi.hProcess, INFINITE);
 
+            // 释放句柄
+            CloseHandle(FirstRun);
+
             // 结束时杀掉启动时运行的程序
             KillAtEnd(iniPath, program_handles);
 
             // 结束时运行
             LaunchAtEnd(iniPath, exeFolder);
-            
-            // 释放句柄
-            CloseHandle(FirstRun);
         }
 
         CloseHandle(pi.hProcess);

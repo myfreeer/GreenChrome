@@ -1,6 +1,6 @@
 #include "cJSON\cJSON.h"
 
-const char extra_header[] = "Content-Type: text/xml; charset=utf-8\r\nAccess-Control-Allow-Origin: http://settings.shuax.com";
+const char extra_header[] = "Content-Type: text/html; charset=utf-8\r\nAccess-Control-Allow-Origin: http://settings.shuax.com";
 
 void ReadList(cJSON *root, const wchar_t *iniPath, const wchar_t *name)
 {

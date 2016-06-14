@@ -50,9 +50,23 @@ BOOL WINAPI MyCryptProtectData(
   _Out_      DATA_BLOB                 *pDataOut
 )
 {
-    *pDataOut = *pDataIn;
+    pDataOut->cbData = pDataIn->cbData;
+    pDataOut->pbData = (BYTE*)LocalAlloc(LMEM_FIXED, pDataOut->cbData);
+    memcpy(pDataOut->pbData, pDataIn->pbData, pDataOut->cbData);
     return true;
 }
+
+typedef BOOL(WINAPI *pCryptUnprotectData)(
+    _In_       DATA_BLOB                 *pDataIn,
+    _Out_opt_  LPWSTR                    *ppszDataDescr,
+    _In_opt_   DATA_BLOB                 *pOptionalEntropy,
+    _Reserved_ PVOID                     pvReserved,
+    _In_opt_   CRYPTPROTECT_PROMPTSTRUCT *pPromptStruct,
+    _In_       DWORD                     dwFlags,
+    _Out_      DATA_BLOB                 *pDataOut
+    );
+
+pCryptUnprotectData RawCryptUnprotectData = NULL;
 
 BOOL WINAPI MyCryptUnprotectData(
   _In_       DATA_BLOB                 *pDataIn,
@@ -64,7 +78,16 @@ BOOL WINAPI MyCryptUnprotectData(
   _Out_      DATA_BLOB                 *pDataOut
 )
 {
-    *pDataOut = *pDataIn;
+    if (RawCryptUnprotectData(pDataIn, ppszDataDescr, pOptionalEntropy, pvReserved, pPromptStruct, dwFlags, pDataOut))
+    {
+        DebugLog(L"RawCryptUnprotectData");
+        return true;
+    }
+
+    pDataOut->cbData = pDataIn->cbData;
+    pDataOut->pbData = (BYTE*)LocalAlloc(LMEM_FIXED, pDataOut->cbData);
+    memcpy(pDataOut->pbData, pDataIn->pbData, pDataOut->cbData);
+    DebugLog(L"MyCryptUnprotectData");
     return true;
 }
 
@@ -198,6 +221,8 @@ void MakePortable(const wchar_t *iniPath)
                 DebugLog(L"MH_CreateHook GetVolumeInformationW failed:%d", status);
             }
         }
+        
+        //components/os_crypt/os_crypt_win.cc
         HMODULE Crypt32 = LoadLibraryW(L"Crypt32.dll");
         if(Crypt32)
         {
@@ -213,7 +238,7 @@ void MakePortable(const wchar_t *iniPath)
             {
                 DebugLog(L"MH_CreateHook CryptProtectData failed:%d", status);
             }
-            status = MH_CreateHook(CryptUnprotectData, MyCryptUnprotectData, NULL);
+            status = MH_CreateHook(CryptUnprotectData, MyCryptUnprotectData, (LPVOID*)&RawCryptUnprotectData);
             if (status == MH_OK)
             {
                 MH_EnableHook(CryptUnprotectData);

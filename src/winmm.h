@@ -212,6 +212,76 @@ EXPORT waveOutUnprepareHeader() NOP_FUNC(189)
 EXPORT waveOutWrite() NOP_FUNC(190)
 EXPORT wid32Message() NOP_FUNC(191)
 EXPORT wod32Message() NOP_FUNC(192)
+// 
+EXPORT IsInteractiveUserSession() NOP_FUNC(193)
+EXPORT QueryActiveSession() NOP_FUNC(194)
+EXPORT QueryUserToken() NOP_FUNC(195)
+EXPORT RegisterUsertokenForNoWinlogon() NOP_FUNC(196)
+EXPORT WTSCloseServer() NOP_FUNC(197)
+EXPORT WTSConnectSessionA() NOP_FUNC(198)
+EXPORT WTSConnectSessionW() NOP_FUNC(199)
+EXPORT WTSCreateListenerA() NOP_FUNC(200)
+EXPORT WTSCreateListenerW() NOP_FUNC(201)
+EXPORT WTSDisconnectSession() NOP_FUNC(202)
+EXPORT WTSEnableChildSessions() NOP_FUNC(203)
+EXPORT WTSEnumerateListenersA() NOP_FUNC(204)
+EXPORT WTSEnumerateListenersW() NOP_FUNC(205)
+EXPORT WTSEnumerateProcessesA() NOP_FUNC(206)
+EXPORT WTSEnumerateProcessesExA() NOP_FUNC(207)
+EXPORT WTSEnumerateProcessesExW() NOP_FUNC(208)
+EXPORT WTSEnumerateProcessesW() NOP_FUNC(209)
+EXPORT WTSEnumerateServersA() NOP_FUNC(210)
+EXPORT WTSEnumerateServersW() NOP_FUNC(211)
+EXPORT WTSEnumerateSessionsA() NOP_FUNC(212)
+EXPORT WTSEnumerateSessionsExA() NOP_FUNC(213)
+EXPORT WTSEnumerateSessionsExW() NOP_FUNC(214)
+EXPORT WTSEnumerateSessionsW() NOP_FUNC(215)
+EXPORT WTSFreeMemory() NOP_FUNC(216)
+EXPORT WTSFreeMemoryExA() NOP_FUNC(217)
+EXPORT WTSFreeMemoryExW() NOP_FUNC(218)
+EXPORT WTSGetChildSessionId() NOP_FUNC(219)
+EXPORT WTSGetListenerSecurityA() NOP_FUNC(220)
+EXPORT WTSGetListenerSecurityW() NOP_FUNC(221)
+EXPORT WTSIsChildSessionsEnabled() NOP_FUNC(222)
+EXPORT WTSLogoffSession() NOP_FUNC(223)
+EXPORT WTSOpenServerA() NOP_FUNC(224)
+EXPORT WTSOpenServerExA() NOP_FUNC(225)
+EXPORT WTSOpenServerExW() NOP_FUNC(226)
+EXPORT WTSOpenServerW() NOP_FUNC(227)
+EXPORT WTSQueryListenerConfigA() NOP_FUNC(228)
+EXPORT WTSQueryListenerConfigW() NOP_FUNC(229)
+EXPORT WTSQuerySessionInformationA() NOP_FUNC(230)
+EXPORT WTSQuerySessionInformationW() NOP_FUNC(231)
+EXPORT WTSQueryUserConfigA() NOP_FUNC(232)
+EXPORT WTSQueryUserConfigW() NOP_FUNC(233)
+EXPORT WTSQueryUserToken() NOP_FUNC(234)
+EXPORT WTSRegisterSessionNotification() NOP_FUNC(235)
+EXPORT WTSRegisterSessionNotificationEx() NOP_FUNC(236)
+EXPORT WTSSendMessageA() NOP_FUNC(237)
+EXPORT WTSSendMessageW() NOP_FUNC(238)
+EXPORT WTSSetListenerSecurityA() NOP_FUNC(239)
+EXPORT WTSSetListenerSecurityW() NOP_FUNC(240)
+EXPORT WTSSetRenderHint() NOP_FUNC(241)
+EXPORT WTSSetSessionInformationA() NOP_FUNC(242)
+EXPORT WTSSetSessionInformationW() NOP_FUNC(243)
+EXPORT WTSSetUserConfigA() NOP_FUNC(244)
+EXPORT WTSSetUserConfigW() NOP_FUNC(245)
+EXPORT WTSShutdownSystem() NOP_FUNC(246)
+EXPORT WTSStartRemoteControlSessionA() NOP_FUNC(247)
+EXPORT WTSStartRemoteControlSessionW() NOP_FUNC(248)
+EXPORT WTSStopRemoteControlSession() NOP_FUNC(249)
+EXPORT WTSTerminateProcess() NOP_FUNC(250)
+EXPORT WTSUnRegisterSessionNotification() NOP_FUNC(251)
+EXPORT WTSUnRegisterSessionNotificationEx() NOP_FUNC(252)
+EXPORT WTSVirtualChannelClose() NOP_FUNC(253)
+EXPORT WTSVirtualChannelOpen() NOP_FUNC(254)
+EXPORT WTSVirtualChannelOpenEx() NOP_FUNC(255)
+EXPORT WTSVirtualChannelPurgeInput() NOP_FUNC(256)
+EXPORT WTSVirtualChannelPurgeOutput() NOP_FUNC(257)
+EXPORT WTSVirtualChannelQuery() NOP_FUNC(258)
+EXPORT WTSVirtualChannelRead() NOP_FUNC(259)
+EXPORT WTSVirtualChannelWrite() NOP_FUNC(260)
+EXPORT WTSWaitSystemEvent() NOP_FUNC(261)
 
 bool WriteMemory(PBYTE BaseAddress, PBYTE Buffer, DWORD nSize)
 {
@@ -264,16 +334,29 @@ void LoadSysDll(HINSTANCE hModule)
             DWORD*  pName       = (DWORD*)(pImageBase + pimExD->AddressOfNames);
             DWORD*  pFunction   = (DWORD*)(pImageBase + pimExD->AddressOfFunctions);
 
-            wchar_t szDLL[MAX_PATH+1];
-            GetSystemDirectory(szDLL, MAX_PATH);
-            lstrcat(szDLL, TEXT("\\winmm.dll"));
+            wchar_t szSysDirectory[MAX_PATH + 1];
+            GetSystemDirectory(szSysDirectory, MAX_PATH);
 
-            HINSTANCE module = LoadLibrary(szDLL);
-            if (module!=NULL)
+            wchar_t szWinmmDLL[MAX_PATH + 1];
+            lstrcpy(szWinmmDLL, szSysDirectory);
+            lstrcat(szWinmmDLL, TEXT("\\winmm.dll"));
+            
+            wchar_t szWtsapi32DLL[MAX_PATH + 1];
+            lstrcpy(szWtsapi32DLL, szSysDirectory);
+            lstrcat(szWtsapi32DLL, TEXT("\\wtsapi32.dll"));
+            
+            HINSTANCE winmm_module = LoadLibrary(szWinmmDLL);
+            HINSTANCE wtsapi32_module = LoadLibrary(szWtsapi32DLL);
+            for (size_t i = 0; i < pimExD->NumberOfNames; i++)
             {
-                for (size_t i = 0; i < pimExD->NumberOfNames; i++)
+                MWORD Original = (MWORD)GetProcAddress(winmm_module, (char*)(pImageBase + pName[i]) );
+                if(Original)
                 {
-                    MWORD Original = (MWORD)GetProcAddress(module, (char*)(pImageBase + pName[i]) );
+                    InstallJMP(pImageBase + pFunction[i], Original);
+                }
+                else
+                {
+                    Original = (MWORD)GetProcAddress(wtsapi32_module, (char*)(pImageBase + pName[i]) );
                     if(Original)
                     {
                         InstallJMP(pImageBase + pFunction[i], Original);

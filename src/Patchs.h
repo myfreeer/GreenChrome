@@ -80,14 +80,12 @@ BOOL WINAPI MyCryptUnprotectData(
 {
     if (RawCryptUnprotectData(pDataIn, ppszDataDescr, pOptionalEntropy, pvReserved, pPromptStruct, dwFlags, pDataOut))
     {
-        DebugLog(L"RawCryptUnprotectData");
         return true;
     }
 
     pDataOut->cbData = pDataIn->cbData;
     pDataOut->pbData = (BYTE*)LocalAlloc(LMEM_FIXED, pDataOut->cbData);
     memcpy(pDataOut->pbData, pDataIn->pbData, pDataOut->cbData);
-    DebugLog(L"MyCryptUnprotectData");
     return true;
 }
 
@@ -221,7 +219,7 @@ void MakePortable(const wchar_t *iniPath)
                 DebugLog(L"MH_CreateHook GetVolumeInformationW failed:%d", status);
             }
         }
-        
+
         //components/os_crypt/os_crypt_win.cc
         HMODULE Crypt32 = LoadLibraryW(L"Crypt32.dll");
         if(Crypt32)

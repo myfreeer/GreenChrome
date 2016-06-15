@@ -40,6 +40,7 @@ public:
                 if (!ignore)
                 {
                     ignore_mouse_event = true;
+                    
                     SendOneMouse(MOUSEEVENTF_RIGHTDOWN);
                     SendOneMouse(MOUSEEVENTF_RIGHTUP);
                 }
@@ -60,7 +61,7 @@ public:
         {
             if(recognition_)
             {
-                if((GetKeyState(VK_RBUTTON) & KEY_PRESSED))
+                if(IsPressed(VK_RBUTTON))
                 {
                     gesture_recognition.move(pmouse->pt.x, pmouse->pt.y);
                     gesture_window->SendMessageW(WM_USER_UPDATE);

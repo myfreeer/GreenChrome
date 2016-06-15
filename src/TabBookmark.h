@@ -664,7 +664,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
         }
 
         // 右键关闭（没有按住SHIFT）
-        if(wParam==WM_RBUTTONUP && RightClickCloseTab && !(GetKeyState(VK_SHIFT) & KEY_PRESSED) && IsOnOneTab(TopContainerView, pmouse->pt))
+        if(wParam==WM_RBUTTONUP && RightClickCloseTab && !IsPressed(VK_SHIFT) && IsOnOneTab(TopContainerView, pmouse->pt))
         {
             close_tab = true;
         }
@@ -700,7 +700,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
                 // 切换标签页，发送ctrl+pagedown/pageup
                 SendKeys(VK_CONTROL, zDelta>0 ? VK_PRIOR : VK_NEXT);
             }
-            else if( RightTabSwitch && (GetKeyState(VK_RBUTTON) & KEY_PRESSED) )
+            else if( RightTabSwitch && IsPressed(VK_RBUTTON) )
             {
                 // 切换标签页，发送ctrl+pagedown/pageup
                 SendKeys(VK_CONTROL, zDelta>0 ? VK_PRIOR : VK_NEXT);
@@ -714,7 +714,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
         }
 
-        if(wParam==WM_LBUTTONUP && BookMarkNewTab && !(GetKeyState(VK_CONTROL) & KEY_PRESSED) && IsOnOneBookmark(TopContainerView, pmouse->pt) )
+        if(wParam==WM_LBUTTONUP && BookMarkNewTab && !IsPressed(VK_CONTROL) && IsOnOneBookmark(TopContainerView, pmouse->pt) )
         {
             if(!NotBlankTab || !IsBlankTab(TopContainerView))
             {
@@ -778,7 +778,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
 
             IAccessible* TopContainerView = GetTopContainerView(GetFocus());
-            if( !(GetKeyState(VK_MENU) & KEY_PRESSED) && IsOmniboxViewFocus(TopContainerView) )
+            if( !IsPressed(VK_MENU) && IsOmniboxViewFocus(TopContainerView) )
             {
                 if(!NotBlankTab || !IsBlankTab(TopContainerView))
                 {
@@ -805,7 +805,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             return CallNextHookEx(keyboard_hook, nCode, wParam, lParam);
         }
 
-        if(wParam=='W' && (GetKeyState(VK_CONTROL) & KEY_PRESSED) && (!(GetKeyState(VK_SHIFT) & KEY_PRESSED)) && KeepLastTab)
+        if(wParam=='W' && IsPressed(VK_CONTROL) && !IsPressed(VK_SHIFT) && KeepLastTab)
         {
             bool keep_tab = false;
 

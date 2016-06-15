@@ -50,6 +50,8 @@ HMODULE hInstance;
 #include "winmm.h"
 #include "util.h"
 
+#include "SharedConfig.h"
+
 #include "minhook\include\MinHook.h"
 
 #include "mongoose\mongoose.h"

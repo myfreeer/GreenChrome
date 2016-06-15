@@ -79,6 +79,7 @@
     <ClInclude Include="src\cJSON\cJSON.h">
       <Filter>cJSON</Filter>
     </ClInclude>
+    <ClInclude Include="src\SharedConfig.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GreenChrome.rc" />

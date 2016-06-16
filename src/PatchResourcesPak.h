@@ -158,6 +158,10 @@ void ModifyHelpPage(uint8_t *buffer)
 
 void ModifySettingsPage(uint8_t *buffer)
 {
+    if (GetPrivateProfileInt(L"基本设置", L"停用WEB设置", 0, iniPath) == 1)
+    {
+        return;
+    }
     BYTE search_start[] = R"(<h3 i18n-content="sectionTitleSync"></h3>)";
 
     uint8_t* pos = memmem(buffer, resources_pak_size, search_start, sizeof(search_start) - 1);

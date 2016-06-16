@@ -44,7 +44,7 @@ public:
             pnts.push_back(pnt);
         }
 
-        graphics.DrawLines(&pen, &pnts[0], pnts.size());
+        graphics.DrawLines(&pen, &pnts[0], (INT)pnts.size());
     }
 
     void DrawGestureResult(Graphics &graphics)

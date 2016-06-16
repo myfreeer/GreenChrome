@@ -42,6 +42,7 @@
     <ClInclude Include="src\PatchResourcesPak.h" />
     <ClInclude Include="src\Patchs.h" />
     <ClInclude Include="src\SettingWeb.h" />
+    <ClInclude Include="src\SharedConfig.h" />
     <ClInclude Include="src\TabBookmark.h" />
     <ClInclude Include="src\Util.h" />
     <ClInclude Include="src\winmm.h" />

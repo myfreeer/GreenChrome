@@ -1,15 +1,4 @@
-﻿bool DoubleClickCloseTab = false;
-bool RightClickCloseTab = false;
-bool KeepLastTab = false;
-bool HoverTabSwitch = false;
-bool RightTabSwitch = false;
-bool BookMarkNewTab = false;
-bool OpenUrlNewTab = false;
-bool NotBlankTab = false;
-bool FrontNewTab = false;
-bool MouseGesture = false;
-
-// 发送按键
+﻿// 发送按键
 class SendKeys
 {
 public:
@@ -664,7 +653,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
         }
 
         // 右键关闭（没有按住SHIFT）
-        if(wParam==WM_RBUTTONUP && RightClickCloseTab && !(GetKeyState(VK_SHIFT) & KEY_PRESSED) && IsOnOneTab(TopContainerView, pmouse->pt))
+        if(wParam==WM_RBUTTONUP && RightClickCloseTab && !IsPressed(VK_SHIFT) && IsOnOneTab(TopContainerView, pmouse->pt))
         {
             close_tab = true;
         }
@@ -700,7 +689,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
                 // 切换标签页，发送ctrl+pagedown/pageup
                 SendKeys(VK_CONTROL, zDelta>0 ? VK_PRIOR : VK_NEXT);
             }
-            else if( RightTabSwitch && (GetKeyState(VK_RBUTTON) & KEY_PRESSED) )
+            else if( RightTabSwitch && IsPressed(VK_RBUTTON) )
             {
                 // 切换标签页，发送ctrl+pagedown/pageup
                 SendKeys(VK_CONTROL, zDelta>0 ? VK_PRIOR : VK_NEXT);
@@ -714,7 +703,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
         }
 
-        if(wParam==WM_LBUTTONUP && BookMarkNewTab && !(GetKeyState(VK_CONTROL) & KEY_PRESSED) && IsOnOneBookmark(TopContainerView, pmouse->pt) )
+        if(wParam==WM_LBUTTONUP && BookMarkNewTab && !IsPressed(VK_CONTROL) && IsOnOneBookmark(TopContainerView, pmouse->pt) )
         {
             if(!NotBlankTab || !IsBlankTab(TopContainerView))
             {
@@ -778,7 +767,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
 
             IAccessible* TopContainerView = GetTopContainerView(GetFocus());
-            if( !(GetKeyState(VK_MENU) & KEY_PRESSED) && IsOmniboxViewFocus(TopContainerView) )
+            if( !IsPressed(VK_MENU) && IsOmniboxViewFocus(TopContainerView) )
             {
                 if(!NotBlankTab || !IsBlankTab(TopContainerView))
                 {
@@ -805,7 +794,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             return CallNextHookEx(keyboard_hook, nCode, wParam, lParam);
         }
 
-        if(wParam=='W' && (GetKeyState(VK_CONTROL) & KEY_PRESSED) && (!(GetKeyState(VK_SHIFT) & KEY_PRESSED)) && KeepLastTab)
+        if(wParam=='W' && IsPressed(VK_CONTROL) && !IsPressed(VK_SHIFT) && KeepLastTab)
         {
             bool keep_tab = false;
 
@@ -838,20 +827,8 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(keyboard_hook, nCode, wParam, lParam );
 }
 
-void TabBookmark(const wchar_t *iniPath)
+void TabBookmark()
 {
-    DoubleClickCloseTab = GetPrivateProfileInt(L"界面增强", L"双击关闭标签页", 1, iniPath)==1;
-    RightClickCloseTab = GetPrivateProfileInt(L"界面增强", L"右键关闭标签页", 0, iniPath)==1;
-    KeepLastTab = GetPrivateProfileInt(L"界面增强", L"保留最后标签", 1, iniPath)==1;
-    HoverTabSwitch = GetPrivateProfileInt(L"界面增强", L"悬停快速标签切换", 1, iniPath)==1;
-    RightTabSwitch = GetPrivateProfileInt(L"界面增强", L"右键快速标签切换", 1, iniPath)==1;
-    BookMarkNewTab = GetPrivateProfileInt(L"界面增强", L"新标签打开书签", 1, iniPath)==1;
-    OpenUrlNewTab = GetPrivateProfileInt(L"界面增强", L"新标签打开网址", 0, iniPath)==1;
-    NotBlankTab = GetPrivateProfileInt(L"界面增强", L"新标签页不生效", 1, iniPath)==1;
-    FrontNewTab = GetPrivateProfileInt(L"界面增强", L"前台打开新标签", 1, iniPath)==1;
-
-    MouseGesture = GetPrivateProfileInt(L"鼠标手势", L"启用", 1, iniPath)==1;
-
     if(!wcsstr(GetCommandLineW(), L"--channel"))
     {
         mouse_hook = SetWindowsHookEx(WH_MOUSE, MouseProc, hInstance, GetCurrentThreadId());

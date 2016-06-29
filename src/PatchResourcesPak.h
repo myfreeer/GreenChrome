@@ -68,9 +68,23 @@ void CustomNewTab(uint8_t *buffer)
 
                 if(wcscmp(html_file, L"%demo%")==0)
                 {
-                    BYTE demo[] = R"(<meta charset="utf-8"><style>html,body{height:100%;overflow:hidden;}body{background-color:#ccc;margin:0;background-image:url(https://unsplash.it/1920/1080?random&blur);background-position:center 0;background-size:cover;}#time{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-family:'Segoe UI',Arial,'Microsoft Yahei',sans-serif;color:#fff;text-shadow:1px 1px 1px #000;}</style><div id="time">12:00:00</div><script>function p(a){return("0"+a).substr(-2)}function r(){var a=new Date();t=p(a.getHours())+":"+p(a.getMinutes())+":"+p(a.getSeconds());document.getElementById("time").innerText=t}r();setInterval(r,1000);</script>)";
-                    size_t demo_size = sizeof(demo) - 1;
-                    memcpy(begin, demo, demo_size);
+                    char demo[] = R"(<meta charset="utf-8"><style>html,body{height:100%;overflow:hidden;}body{background-color:#ccc;margin:0;background-image:url(https://unsplash.it/1920/1080?random&blur);background-position:center 0;background-size:cover;}#time{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-family:'Segoe UI',Arial,'Microsoft Yahei',sans-serif;color:#fff;text-shadow:1px 1px 1px #000;}</style><div id="time">12:00:00</div><script>function p(a){return("0"+a).substr(-2)}function r(){var a=new Date();t=p(a.getHours())+":"+p(a.getMinutes())+":"+p(a.getSeconds());document.getElementById("time").innerText=t}r();setInterval(r,1000);</script>)";
+                    memcpy(begin, demo, strlen(demo));
+                    return true;
+                }
+                if (isStartWith(html_file, L"http"))
+                {
+                    char s1[] = R"(<iframe src=")";
+                    int s1_len = strlen(s1);
+                    memcpy(begin, s1, s1_len);
+
+                    std::string url = utf16to8(html_file);
+                    memcpy(begin + s1_len, url.c_str(), url.length());
+
+                    char s2[] = R"(" style="position:fixed; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden;" />)";
+                    int s2_len = strlen(s2);
+                    memcpy(begin + s1_len + url.length(), s2, s2_len);
+                    return true;
                 }
 
                 // 读取文件覆盖内存

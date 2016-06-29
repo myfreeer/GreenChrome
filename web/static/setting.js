@@ -1,4 +1,4 @@
-var interface = "http://127.0.0.1"
+var interface = "http://localhost.settings.shuax.com"
 function AJAX(url, data, callback)
 {
 	$.ajax({
@@ -214,7 +214,7 @@ function probe_interface(port)
 		url: interface + ":" + port + "/get_setting",
 		type: "post",
 		async: true,
-		timeout: 100,
+		timeout: 300,
 		data: {},
 		error: function(e) {
 			probe_interface(port + 1);
@@ -247,7 +247,7 @@ $(document).ready(function() {
 		{
 			pleaseWaitDiv.modal();
 		}
-	}, 100)
+	}, 300)
 
 	$.support.cors = true;
 	probe_interface(10000);

@@ -215,7 +215,7 @@ void WebThread(const std::wstring iniPath)
 
 void SettingWeb(const wchar_t *iniPath)
 {
-    if (GetPrivateProfileInt(L"基本设置", L"停用WEB设置", 0, iniPath) == 1)
+    if (StopWeb)
     {
         return;
     }

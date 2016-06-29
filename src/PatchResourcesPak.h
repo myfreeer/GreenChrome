@@ -158,7 +158,7 @@ void ModifyHelpPage(uint8_t *buffer)
 
 void ModifySettingsPage(uint8_t *buffer)
 {
-    if (GetPrivateProfileInt(L"基本设置", L"停用WEB设置", 0, iniPath) == 1)
+    if (StopWeb)
     {
         return;
     }
@@ -381,13 +381,25 @@ void PatchResourcesPak(const wchar_t *iniPath)
     if(html_file[0])
     {
         // 破解自定义页面不能使用js
-        /*
+        /*const char kChromeURLContentSecurityPolicyHeaderBase[] =
+            "Content-Security-Policy: ";
+
           if (add_content_security_policy_) {
             std::string base = kChromeURLContentSecurityPolicyHeaderBase;
             base.append(RequiresUnsafeEval() ? " 'unsafe-eval'; " : "; ");
             base.append(content_security_policy_object_source_);
             base.append(content_security_policy_frame_source_);
             info->headers->AddHeader(base);
+          }
+
+          if (add_content_security_policy_) {
+          std::string base = kChromeURLContentSecurityPolicyHeaderBase;
+          base.append(content_security_policy_script_source_);
+          base.append(content_security_policy_object_source_);
+          base.append(content_security_policy_child_source_);
+          base.append(content_security_policy_style_source_);
+          base.append(content_security_policy_image_source_);
+          info->headers->AddHeader(base);
           }
         */
         #ifdef _WIN64
@@ -400,8 +412,7 @@ void PatchResourcesPak(const wchar_t *iniPath)
         }
         else
         {
-            search[5] = 0x8D;
-            search[9] = 0x45;
+            BYTE search[] = { 0x02, 0x00, 0x00, 0x0F, 0x84, 0x8D, 0x00, 0x00, 0x00, 0x45 };
             unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
             if (unsafe)
             {
@@ -410,7 +421,17 @@ void PatchResourcesPak(const wchar_t *iniPath)
             }
             else
             {
-                DebugLog(L"patch unsafe-js failed");
+                BYTE search[] = { 0x02, 0x00, 0x00, 0x0F, 0x84, 0xC9, 0x00, 0x00, 0x00, 0x41 };
+                unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
+                if (unsafe)
+                {
+                    BYTE patch[] = { 0x90, 0xE9 };
+                    WriteMemory(unsafe + 3, patch, sizeof(patch));
+                }
+                else
+                {
+                    DebugLog(L"patch unsafe-js failed");
+                }
             }
         }
         #else
@@ -423,7 +444,17 @@ void PatchResourcesPak(const wchar_t *iniPath)
         }
         else
         {
-            DebugLog(L"patch unsafe-js failed");
+            BYTE search[] = { 0x99, 0x01, 0x00, 0x00, 0x00, 0x0F, 0x84 };
+            uint8_t *unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
+            if (unsafe)
+            {
+                BYTE patch[] = { 0x90, 0xE9 };
+                WriteMemory(unsafe + 5, patch, sizeof(patch));
+            }
+            else
+            {
+                DebugLog(L"patch unsafe-js failed");
+            }
         }
         #endif
     }

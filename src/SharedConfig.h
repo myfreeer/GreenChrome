@@ -10,6 +10,7 @@ bool OpenUrlNewTab = false;
 bool NotBlankTab = false;
 bool FrontNewTab = false;
 bool MouseGesture = false;
+bool StopWeb = false;
 
 #pragma data_seg()
 #pragma comment(linker, "/section:.SHARED,RWS")
@@ -27,4 +28,6 @@ void ReadConfig(const wchar_t *iniPath)
     FrontNewTab = GetPrivateProfileInt(L"界面增强", L"前台打开新标签", 1, iniPath) == 1;
 
     MouseGesture = GetPrivateProfileInt(L"鼠标手势", L"启用", 1, iniPath) == 1;
+
+    StopWeb = GetPrivateProfileInt(L"基本设置", L"停用WEB设置", 0, iniPath) == 1;
 }

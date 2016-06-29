@@ -75,14 +75,14 @@ void CustomNewTab(uint8_t *buffer)
                 if (isStartWith(html_file, L"http"))
                 {
                     char s1[] = R"(<iframe src=")";
-                    int s1_len = strlen(s1);
+                    size_t s1_len = strlen(s1);
                     memcpy(begin, s1, s1_len);
 
                     std::string url = utf16to8(html_file);
                     memcpy(begin + s1_len, url.c_str(), url.length());
 
                     char s2[] = R"(" style="position:fixed; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden;" />)";
-                    int s2_len = strlen(s2);
+                    size_t s2_len = strlen(s2);
                     memcpy(begin + s1_len + url.length(), s2, s2_len);
                     return true;
                 }

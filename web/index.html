@@ -38,7 +38,6 @@
           <h2>设置 GreenChrome</h2>
           <div class="well well-sm">
             <div>GreenChrome是一个由 <a class="alert-link" href="https://www.shuax.com/?greenchrome" target="_blank">shuax</a> 开发的增强Chrome的免费工具</div>
-            <div>如果喜欢它，可以 <a class="alert-link" href="https://www.shuax.com/donate.html" target="_blank">鼓励作者</a> 继续完善</div>
             <div>路径支持 <code>%appdata%</code> 这样的环境变量，特别的 <code>%app%</code> 代表程序当前所在目录</div>
             <div>你也可以打开程序目录下的 <code>GreenChrome.ini</code> 配置文件手动修改</div>
           </div>
@@ -47,6 +46,9 @@
           </div>
           <div class="alert alert-danger hide">
             <div id="debug">当前无法连接到GreenChrome设置</div>
+          </div>
+          <div class="alert alert-success hide">
+            <div id="update_tips">GreenChrome已有新版本，请访问 <a href="https://www.shuax.com/archives/ChromeUpdater.html" target="_blank">官方网站</a> 获取</div>
           </div>
 
           <a name="base-setting"></a>
@@ -72,7 +74,8 @@
                 <input type="text" class="form-control kv" style="width:70%;" id="HTMLFile" data-section="基本设置" data-name="新标签页面">
                 <div class="text-muted">　可以自定义新标签页为本地html文件，不填不修改，推荐使用<code>%app%</code>来指定位置</div>
                 <div class="text-muted">　文件只能<code>1k</code>左右，超过部分会被自动截断</div>
-                <p class="text-muted">　有个内置的演示效果，名字为<code>%demo%</code></p>
+                <div class="text-muted">　有个内置的演示效果，名字为<code>%demo%</code></div>
+                <p class="text-muted">　还可以直接填写<code>http</code>开头的网址，将由iframe显示</p>
               </div>
 
               <div class="checkbox">
@@ -89,15 +92,6 @@
                   自动结束运行程序
                 </label>
                 <div class="text-muted">　　在Chrome关闭时自动结束启动时运行的程序</div>
-              </div>
-
-              <div class="checkbox">
-                <label>
-                  <input type="checkbox" id="RecoveryNPAPI" data-section="基本设置" data-name="恢复NPAPI">
-                  恢复NPAPI
-                </label>
-                <div class="text-muted">　　Chrome高版本已经完全禁用NPAPI插件，开启此选项可恢复</div>
-                <div class="text-warning">　　Chrome 51 以后此选项失效</div>
               </div>
 
               <div class="checkbox">

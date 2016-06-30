@@ -25,7 +25,6 @@ function Render(response)
 	$("#HTMLFile").val(response["基本设置"]["新标签页面"])
 	$('#RemoveUpdateError').attr("checked",response["基本设置"]["移除更新错误"]=="1");
 	$('#KillAtEnd').attr("checked",response["基本设置"]["自动结束运行程序"]=="1");
-	$('#RecoveryNPAPI').attr("checked",response["基本设置"]["恢复NPAPI"]=="1");
 	$('#MakePortable').attr("checked",response["基本设置"]["便携化"]=="1");
 
 	// 界面增强
@@ -230,6 +229,19 @@ function probe_interface(port)
 	});
 }
 
+function getUrlVars()
+{
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+    return vars;
+}
+
 $(document).ready(function() {
 	$('form,input,select,textarea').attr("autocomplete", "off");
 
@@ -298,4 +310,10 @@ $(document).ready(function() {
 
 		return false;
 	});
+
+	var version = getUrlVars()["v"];
+	if(version!="5.9.5")
+	{
+		$("#update_tips").parent().removeClass("hide")
+	}
 });

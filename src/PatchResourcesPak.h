@@ -342,12 +342,6 @@ HANDLE WINAPI MyCreateFile(
     {
         return INVALID_HANDLE_VALUE;
     }
-    
-    // 禁用扩展"内容验证"
-    if(isEndWith(lpFileName, L"computed_hashes.json"))
-    {
-        return INVALID_HANDLE_VALUE;
-    }
 
     HANDLE file = RawCreateFile(lpFileName, dwDesiredAccess, dwShareMode,
         lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes,

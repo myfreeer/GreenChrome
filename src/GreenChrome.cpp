@@ -27,9 +27,6 @@ void GreenChrome()
     // 打造便携版chrome
     MakePortable(iniPath);
 
-    // 恢复NPAPI接口
-    RecoveryNPAPI(iniPath);
-
     // 给resources.pak打补丁
     PatchResourcesPak(iniPath);
 

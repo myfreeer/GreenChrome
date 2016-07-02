@@ -1,4 +1,5 @@
-#GreenChrome
+#GreenChrome[![Build status](https://ci.appveyor.com/api/projects/status/nolelh2oas3xi2ma/branch/master?svg=true)](https://ci.appveyor.com/project/myfreeer/greenchrome/branch/master)
+
 
 ##简介
 * 这是一个增强Chrome的工具，通过winmm.dll劫持的方式，本程序会随着Chrome启动。

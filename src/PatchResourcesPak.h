@@ -126,47 +126,6 @@ void RemovePakUpdateError(uint8_t *buffer)
 
 void ModifyHelpPage(uint8_t *buffer)
 {
-    BYTE search_start[] = R"(
-<body class="uber-frame">
-  <header>
-    <h1 i18n-content="aboutTitle"></h1>
-)";
-
-    uint8_t* pos = memmem(buffer, resources_pak_size, search_start, sizeof(search_start) - 1);
-    if (pos)
-    {
-        TraversalPakFile(buffer, [=](uint8_t *begin, uint8_t* end, uint32_t size) {
-            if (pos >= begin && pos <= end)
-            {
-                // 压缩HTML以备写入补丁信息
-                std::string html((char*)begin, size);
-                compression_html(html);
-
-                const char prouct_title[] = u8R"(<br><div>GreenChrome )" RELEASE_VER_STR u8R"(</div><div id="product-container">)";
-                ReplaceStringInPlace(html, R"(</div><div id="product-container">)", prouct_title);
-
-                if (html.length() <= size)
-                {
-                    // 写入修改
-                    memcpy(begin, html.c_str(), html.length());
-
-                    // 填充空格
-                    memset(begin + html.length(), ' ', size - html.length());
-                }
-                else
-                {
-                    DebugLog(L"ModifyHelpPage size failed");
-                }
-
-                return true;
-            }
-            return false;
-        });
-    }
-    else
-    {
-        DebugLog(L"ModifyHelpPage failed");
-    }
 }
 
 
@@ -174,44 +133,7 @@ void ModifySettingsPage(uint8_t *buffer)
 {
     if (StopWeb)
     {
-        return;
-    }
-    BYTE search_start[] = R"(<h3 i18n-content="sectionTitleSync"></h3>)";
-
-    uint8_t* pos = memmem(buffer, resources_pak_size, search_start, sizeof(search_start) - 1);
-    if (pos)
-    {
-        TraversalPakFile(buffer, [=](uint8_t *begin, uint8_t* end, uint32_t size) {
-            if (pos >= begin && pos <= end)
-            {
-                // 压缩HTML以备写入补丁信息
-                std::string html((char*)begin, size);
-                compression_html(html);
-
-                const char prouct_title[] = u8R"(<section><h3>GreenChrome</h3><div class="settings-row">如果喜欢它，可以 <a class="alert-link" href="https://www.shuax.com/donate.html" target="_blank">鼓励作者</a> 继续完善。</div><button><a href="http://settings.shuax.com/gc/" target="_blank" style="text-decoration:none;color:#444;">点击设置</a></button></section><section id="sync-section">)";
-                ReplaceStringInPlace(html, R"(<section id="sync-section">)", prouct_title);
-
-                if (html.length() <= size)
-                {
-                    // 写入修改
-                    memcpy(begin, html.c_str(), html.length());
-
-                    // 填充空格
-                    memset(begin + html.length(), ' ', size - html.length());
-                }
-                else
-                {
-                    DebugLog(L"ModifySettingsPage size failed");
-                }
-
-                return true;
-            }
-            return false;
-        });
-    }
-    else
-    {
-        DebugLog(L"ModifySettingsPage failed");
+        return false;
     }
 }
 
@@ -260,9 +182,9 @@ HANDLE WINAPI MyMapViewOfFile(
             }
 
             // 修改关于页面
-            ModifyHelpPage((BYTE*)buffer);
+            //ModifyHelpPage((BYTE*)buffer);
             // 修改设置页面
-            ModifySettingsPage((BYTE*)buffer);
+            //ModifySettingsPage((BYTE*)buffer);
         }
 
         return buffer;

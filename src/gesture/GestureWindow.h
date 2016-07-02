@@ -138,6 +138,10 @@ public:
 
     LRESULT OnUserShow(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
     {
+        if (GetForegroundWindow()!= main_hwnd)
+        {
+            SetForegroundWindow(main_hwnd);
+        }
         RECT rect;
         ::GetWindowRect(main_hwnd, &rect);
         ::SetWindowPos(m_hWnd, NULL, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOACTIVATE | SWP_NOZORDER);

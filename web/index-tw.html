@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>設定 GreenChrome</title>
-    <link id="favicon" rel="icon" type="image/png" href="/static/favicon.png">
+    <link id="favicon" rel="icon" type="image/png" href="static/favicon.png">
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
     <meta name="format-detection" content="telephone=no"/>
     <link href="static/bootstrap.min.css" rel="stylesheet">
@@ -18,7 +18,7 @@
       }
     </style>
   </head>
-  <body>
+  <body spellcheck="false">
     <div class="container">
       <div class="row">
         <div class="col-sm-2 hidden-sm hidden-xs">
@@ -38,7 +38,6 @@
           <h2>設定 GreenChrome</h2>
           <div class="well well-sm">
             <div>GreenChrome是一個由 <a class="alert-link" href="https://www.shuax.com/?greenchrome" target="_blank">shuax</a> 開發，用來增強Chrome的免費工具</div>
-            <div>如果喜歡它，可以 <a class="alert-link" href="https://www.shuax.com/donate.html" target="_blank">鼓勵作者</a>，以讓作者繼續完善此工具</div>
             <div>路徑支援 <code>%appdata%</code> 這樣的環境變數，特別的 <code>%app%</code> 代表程式目前所在目錄</div>
             <div>你也可以開啟程式目錄下的 <code>GreenChrome.ini</code> 設定檔來手動變更設定</div>
 			<div>臺灣中文化作者： <a class="alert-link" href="http://greedphantom.blogspot.tw/" target="_blank">zhtw</a>有空可以逛逛他的Blog！</div>
@@ -49,9 +48,12 @@
           <div class="alert alert-danger hide">
             <div id="debug">目前無法連線到GreenChrome設定</div>
           </div>
+          <div class="alert alert-success hide">
+            <div id="update_tips">GreenChrome已有新版本，請訪問 <a href="https://www.shuax.com/archives/ChromeUpdater.html" target="_blank">官方網站</a> 獲取</div>
+          </div>
 
           <a name="base-setting"></a>
-          <br><h4>基本設定</h4>
+          <h4>基本設定</h4>
           <div class="row">
             <div class="col-xs-offset-0 col-xs-11">
 
@@ -73,7 +75,8 @@
                 <input type="text" class="form-control kv" style="width:70%;" id="HTMLFile" data-section="基本设置" data-name="新标签页面">
                 <div class="text-muted">　可以自訂新分頁為本地html檔案，不填不變更，推薦使用<code>%app%</code>來指定位置</div>
                 <div class="text-muted">　檔案只能<code>1k</code>左右，超過部分會被自動截斷</div>
-                <p class="text-muted">　有個內建的展示效果，名字為<code>%demo%</code></p>
+                <div class="text-muted">　有個內建的展示效果，名字為<code>%demo%</code></div>
+                <p class="text-muted">　還可以直接填寫<code>http</code>開頭的網址，將由iframe顯示</p>
               </div>
 
               <div class="checkbox">
@@ -90,15 +93,6 @@
                   自動結束執行程式
                 </label>
                 <div class="text-muted">　　在Chrome關閉時自動結束啟動時執行的程式</div>
-              </div>
-
-              <div class="checkbox">
-                <label>
-                  <input type="checkbox" id="RecoveryNPAPI" data-section="基本设置" data-name="恢复NPAPI">
-                  恢復NPAPI
-                </label>
-                <div class="text-muted">　　Chrome高核心版本已經完全停用NPAPI，開啟此選項可恢復</div>
-                <div class="text-warning">　　Chrome 51 以後此選項失效</div>
               </div>
 
               <div class="checkbox">

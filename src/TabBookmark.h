@@ -644,7 +644,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             return CallNextHookEx(mouse_hook, nCode, wParam, lParam );;
         }
 
-        IAccessible* TopContainerView = GetTopContainerView(pmouse->hwnd);
+        IAccessible* TopContainerView = GetTopContainerView(WindowFromPoint(pmouse->pt));
 
         // 双击关闭
         if(wParam==WM_LBUTTONDBLCLK && DoubleClickCloseTab && IsOnOneTab(TopContainerView, pmouse->pt))

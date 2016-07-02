@@ -1,4 +1,4 @@
-var interface = "http://127.0.0.1"
+var interface = "http://localhost.settings.shuax.com"
 function AJAX(url, data, callback)
 {
 	$.ajax({
@@ -25,7 +25,6 @@ function Render(response)
 	$("#HTMLFile").val(response["基本设置"]["新标签页面"])
 	$('#RemoveUpdateError').attr("checked",response["基本设置"]["移除更新错误"]=="1");
 	$('#KillAtEnd').attr("checked",response["基本设置"]["自动结束运行程序"]=="1");
-	$('#RecoveryNPAPI').attr("checked",response["基本设置"]["恢复NPAPI"]=="1");
 	$('#MakePortable').attr("checked",response["基本设置"]["便携化"]=="1");
 
 	// 界面增强
@@ -214,7 +213,7 @@ function probe_interface(port)
 		url: interface + ":" + port + "/get_setting",
 		type: "post",
 		async: true,
-		timeout: 100,
+		timeout: 300,
 		data: {},
 		error: function(e) {
 			probe_interface(port + 1);
@@ -228,6 +227,19 @@ function probe_interface(port)
 			Render(response)
 		}
 	});
+}
+
+function getUrlVars()
+{
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++)
+    {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+    return vars;
 }
 
 $(document).ready(function() {
@@ -247,7 +259,7 @@ $(document).ready(function() {
 		{
 			pleaseWaitDiv.modal();
 		}
-	}, 100)
+	}, 300)
 
 	$.support.cors = true;
 	probe_interface(10000);
@@ -298,4 +310,10 @@ $(document).ready(function() {
 
 		return false;
 	});
+
+	var version = getUrlVars()["v"];
+	if(version!="5.9.5")
+	{
+		$("#update_tips").parent().removeClass("hide")
+	}
 });

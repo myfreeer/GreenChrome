@@ -40,7 +40,6 @@ static bool http_post(struct mg_connection *nc, struct http_message *hm)
         ReadValue(node, iniPath, L"基本设置", L"新标签页面");
         ReadValue(node, iniPath, L"基本设置", L"移除更新错误");
         ReadValue(node, iniPath, L"基本设置", L"自动结束运行程序");
-        ReadValue(node, iniPath, L"基本设置", L"恢复NPAPI");
         ReadValue(node, iniPath, L"基本设置", L"便携化");
         cJSON_AddItemToObject(root, utf16to8(L"基本设置").c_str(), node);
 
@@ -215,7 +214,7 @@ void WebThread(const std::wstring iniPath)
 
 void SettingWeb(const wchar_t *iniPath)
 {
-    if (GetPrivateProfileInt(L"基本设置", L"停用WEB设置", 0, iniPath) == 1)
+    if (StopWeb)
     {
         return;
     }

@@ -472,13 +472,22 @@ bool ImageFromIDResource(const char *name, Image *&pImg)
     return TRUE;
 }
 
-bool isEndWith(const wchar_t *path,const wchar_t* ext)
+bool isEndWith(const wchar_t *s, const wchar_t *sub)
 {
-    if(!path || !ext) return false;
-    size_t len1 = wcslen(path);
-    size_t len2 = wcslen(ext);
-    if(len2>len1) return false;
-    return !_memicmp(path + len1 - len2,ext,len2*sizeof(wchar_t));
+    if (!s || !sub) return false;
+    size_t len1 = wcslen(s);
+    size_t len2 = wcslen(sub);
+    if (len2>len1) return false;
+    return !_memicmp(s + len1 - len2, sub, len2 * sizeof(wchar_t));
+}
+
+bool isStartWith(const wchar_t *s, const wchar_t *sub)
+{
+    if (!s || !sub) return false;
+    size_t len1 = wcslen(s);
+    size_t len2 = wcslen(sub);
+    if (len2>len1) return false;
+    return !_memicmp(s, sub, len2 * sizeof(wchar_t));
 }
 
 auto GetSection(const wchar_t *name, const wchar_t *iniPath)

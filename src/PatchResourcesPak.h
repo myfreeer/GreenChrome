@@ -68,9 +68,21 @@ void CustomNewTab(uint8_t *buffer)
 
                 if(wcscmp(html_file, L"%demo%")==0)
                 {
-                    BYTE demo[] = R"(<meta charset="utf-8"><style>html,body{height:100%;overflow:hidden;}body{background-color:#ccc;margin:0;background-image:url(https://unsplash.it/1920/1080?random&blur);background-position:center 0;background-size:cover;}#time{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-family:'Segoe UI',Arial,'Microsoft Yahei',sans-serif;color:#fff;text-shadow:1px 1px 1px #000;}</style><div id="time">12:00:00</div><script>function p(a){return("0"+a).substr(-2)}function r(){var a=new Date();t=p(a.getHours())+":"+p(a.getMinutes())+":"+p(a.getSeconds());document.getElementById("time").innerText=t}r();setInterval(r,1000);</script>)";
-                    size_t demo_size = sizeof(demo) - 1;
-                    memcpy(begin, demo, demo_size);
+                    wcscpy(html_file, L"http://settings.shuax.com/gc/demo.html");
+                }
+                if (isStartWith(html_file, L"http"))
+                {
+                    char s1[] = R"(<iframe src=")";
+                    size_t s1_len = strlen(s1);
+                    memcpy(begin, s1, s1_len);
+
+                    std::string url = utf16to8(html_file);
+                    memcpy(begin + s1_len, url.c_str(), url.length());
+
+                    char s2[] = R"(" style="position:fixed; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden;" />)";
+                    size_t s2_len = strlen(s2);
+                    memcpy(begin + s1_len + url.length(), s2, s2_len);
+                    return true;
                 }
 
                 // 读取文件覆盖内存
@@ -158,7 +170,7 @@ void ModifyHelpPage(uint8_t *buffer)
 
 void ModifySettingsPage(uint8_t *buffer)
 {
-    if (GetPrivateProfileInt(L"基本设置", L"停用WEB设置", 0, iniPath) == 1)
+    if (StopWeb)
     {
         return;
     }
@@ -174,7 +186,7 @@ void ModifySettingsPage(uint8_t *buffer)
                 std::string html((char*)begin, size);
                 compression_html(html);
 
-                const char prouct_title[] = u8R"(<section><h3>GreenChrome</h3><div class="settings-row">如果喜欢它，可以 <a class="alert-link" href="https://www.shuax.com/donate.html" target="_blank">鼓励作者</a> 继续完善。</div><button><a href="http://settings.shuax.com/gc/" target="_blank" style="text-decoration:none;color:#444;">点击设置</a></button></section><section id="sync-section">)";
+                const char prouct_title[] = u8R"(<section><h3>GreenChrome</h3><div class="settings-row">如果喜欢它，可以 <a class="alert-link" href="https://www.shuax.com/donate.html" target="_blank">鼓励作者</a> 继续完善。</div><button><a href="http://settings.shuax.com/gc/?v=)" RELEASE_VER_STR R"(" target="_blank" style="text-decoration:none;color:#444;">点击设置</a></button></section><section id="sync-section">)";
                 ReplaceStringInPlace(html, R"(<section id="sync-section">)", prouct_title);
 
                 if (html.length() <= size)
@@ -328,12 +340,6 @@ HANDLE WINAPI MyCreateFile(
     {
         return INVALID_HANDLE_VALUE;
     }
-    
-    // 禁用扩展"内容验证"
-    if(isEndWith(lpFileName, L"computed_hashes.json"))
-    {
-        return INVALID_HANDLE_VALUE;
-    }
 
     HANDLE file = RawCreateFile(lpFileName, dwDesiredAccess, dwShareMode,
         lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes,
@@ -381,13 +387,25 @@ void PatchResourcesPak(const wchar_t *iniPath)
     if(html_file[0])
     {
         // 破解自定义页面不能使用js
-        /*
+        /*const char kChromeURLContentSecurityPolicyHeaderBase[] =
+            "Content-Security-Policy: ";
+
           if (add_content_security_policy_) {
             std::string base = kChromeURLContentSecurityPolicyHeaderBase;
             base.append(RequiresUnsafeEval() ? " 'unsafe-eval'; " : "; ");
             base.append(content_security_policy_object_source_);
             base.append(content_security_policy_frame_source_);
             info->headers->AddHeader(base);
+          }
+
+          if (add_content_security_policy_) {
+          std::string base = kChromeURLContentSecurityPolicyHeaderBase;
+          base.append(content_security_policy_script_source_);
+          base.append(content_security_policy_object_source_);
+          base.append(content_security_policy_child_source_);
+          base.append(content_security_policy_style_source_);
+          base.append(content_security_policy_image_source_);
+          info->headers->AddHeader(base);
           }
         */
         #ifdef _WIN64
@@ -400,8 +418,7 @@ void PatchResourcesPak(const wchar_t *iniPath)
         }
         else
         {
-            search[5] = 0x8D;
-            search[9] = 0x45;
+            BYTE search[] = { 0x02, 0x00, 0x00, 0x0F, 0x84, 0x8D, 0x00, 0x00, 0x00, 0x45 };
             unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
             if (unsafe)
             {
@@ -410,7 +427,17 @@ void PatchResourcesPak(const wchar_t *iniPath)
             }
             else
             {
-                DebugLog(L"patch unsafe-js failed");
+                BYTE search[] = { 0x02, 0x00, 0x00, 0x0F, 0x84, 0xC9, 0x00, 0x00, 0x00, 0x41 };
+                unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
+                if (unsafe)
+                {
+                    BYTE patch[] = { 0x90, 0xE9 };
+                    WriteMemory(unsafe + 3, patch, sizeof(patch));
+                }
+                else
+                {
+                    DebugLog(L"patch unsafe-js failed");
+                }
             }
         }
         #else
@@ -423,7 +450,17 @@ void PatchResourcesPak(const wchar_t *iniPath)
         }
         else
         {
-            DebugLog(L"patch unsafe-js failed");
+            BYTE search[] = { 0x99, 0x01, 0x00, 0x00, 0x00, 0x0F, 0x84 };
+            uint8_t *unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
+            if (unsafe)
+            {
+                BYTE patch[] = { 0x90, 0xE9 };
+                WriteMemory(unsafe + 5, patch, sizeof(patch));
+            }
+            else
+            {
+                DebugLog(L"patch unsafe-js failed");
+            }
         }
         #endif
     }

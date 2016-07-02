@@ -20,6 +20,10 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
                 command_line.push_back(L"--force-local-ntp");
             }
 
+            //扩展程序内容验证设为“引导模式”
+            command_line.push_back(L"--extension-content-verification=bootstrap");
+            command_line.push_back(L"--enable-easy-off-store-extension-install");
+
             auto contents = GetSection(L"追加参数", iniPath);
             for (auto &parameter_str : contents)
             {

@@ -81,31 +81,6 @@ void LaunchAtStart(const wchar_t *iniPath, const wchar_t *exeFolder, std::vector
 
 void LaunchUpdater(const wchar_t *iniPath, const wchar_t *exeFolder)
 {
-    // 检查更新
-    wchar_t updater_path[MAX_PATH];
-    GetPrivateProfileString(L"检查更新", L"更新器地址", L"", updater_path, MAX_PATH, iniPath);
-    if(updater_path[0])
-    {
-        // 转换绝对路径
-        PathCombineW(updater_path, exeFolder, updater_path);
-
-        // 扩展环境变量
-        std::wstring updater = ExpandEnvironmentPath(updater_path);
-
-        // 扩展%app%
-        ReplaceStringInPlace(updater, L"%app%", exeFolder);
-
-        wchar_t check_version[MAX_PATH];
-        GetPrivateProfileString(L"检查更新", L"检查版本", L"", check_version, MAX_PATH, iniPath);
-
-        if(check_version[0])
-        {
-            std::wstring parameters = QuotePathIfNeeded(updater) + L" " + QuotePathIfNeeded(exeFolder) + L" " + check_version;
-
-            // 运行程序
-            RunExecute(parameters.c_str());
-        }
-    }
 }
 
 // 退出时运行额外程序
@@ -160,8 +135,6 @@ bool OnceFeature(const wchar_t *iniPath)
         // 启动老板键
         Bosskey(iniPath);
 
-        // 启动设置页面
-        SettingWeb(iniPath);
     }
     return first_run;
 }
@@ -172,9 +145,6 @@ void CustomCommand(const wchar_t *iniPath, const wchar_t *exeFolder, const wchar
     std::vector <HANDLE> program_handles;
     if (first_run)
     {
-        // 启动更新器
-        LaunchUpdater(iniPath, exeFolder);
-
         // 启动时运行
         LaunchAtStart(iniPath, exeFolder, program_handles);
     }

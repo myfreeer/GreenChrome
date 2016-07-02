@@ -1,18 +1,19 @@
 ﻿#include "GreenChrome.h"
 
+ wchar_t exePath[MAX_PATH];
+ wchar_t exeFolder[MAX_PATH];
+ wchar_t iniPath[MAX_PATH];
+ 
 void GreenChrome()
 {
     // exe路径
-    wchar_t exePath[MAX_PATH];
     GetModuleFileNameW(NULL, exePath, MAX_PATH);
 
     // exe所在文件夹
-    wchar_t exeFolder[MAX_PATH];
     wcscpy(exeFolder, exePath);
     PathRemoveFileSpecW(exeFolder);
 
     // 生成默认ini文件
-    wchar_t iniPath[MAX_PATH];
     ReleaseIni(exeFolder, iniPath);
 
     // 读取配置

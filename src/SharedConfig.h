@@ -25,7 +25,7 @@ void ReadConfig(const wchar_t *iniPath)
     BookMarkNewTab = GetPrivateProfileInt(L"界面增强", L"新标签打开书签", 0, iniPath) == 1;
     OpenUrlNewTab = GetPrivateProfileInt(L"界面增强", L"新标签打开网址", 0, iniPath) == 1;
     NotBlankTab = GetPrivateProfileInt(L"界面增强", L"新标签页不生效", 0, iniPath) == 1;
-    FrontNewTab = GetPrivateProfileInt(L"界面增强", L"前台打开新标签", , iniPath) == 1;
+    FrontNewTab = GetPrivateProfileInt(L"界面增强", L"前台打开新标签", 0, iniPath) == 1;
 
     MouseGesture = GetPrivateProfileInt(L"鼠标手势", L"启用", 0, iniPath) == 1;
 

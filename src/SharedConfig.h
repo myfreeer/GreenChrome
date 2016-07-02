@@ -17,17 +17,17 @@ bool StopWeb = false;
 
 void ReadConfig(const wchar_t *iniPath)
 {
-    DoubleClickCloseTab = GetPrivateProfileInt(L"½çÃæÔöÇ¿", L"Ë«»÷¹Ø±Õ±êÇ©Ò³", 1, iniPath) == 1;
-    RightClickCloseTab = GetPrivateProfileInt(L"½çÃæÔöÇ¿", L"ÓÒ¼ü¹Ø±Õ±êÇ©Ò³", 0, iniPath) == 1;
-    KeepLastTab = GetPrivateProfileInt(L"½çÃæÔöÇ¿", L"±£Áô×îºó±êÇ©", 1, iniPath) == 1;
-    HoverTabSwitch = GetPrivateProfileInt(L"½çÃæÔöÇ¿", L"ĞüÍ£¿ìËÙ±êÇ©ÇĞ»»", 1, iniPath) == 1;
-    RightTabSwitch = GetPrivateProfileInt(L"½çÃæÔöÇ¿", L"ÓÒ¼ü¿ìËÙ±êÇ©ÇĞ»»", 1, iniPath) == 1;
-    BookMarkNewTab = GetPrivateProfileInt(L"½çÃæÔöÇ¿", L"ĞÂ±êÇ©´ò¿ªÊéÇ©", 1, iniPath) == 1;
-    OpenUrlNewTab = GetPrivateProfileInt(L"½çÃæÔöÇ¿", L"ĞÂ±êÇ©´ò¿ªÍøÖ·", 0, iniPath) == 1;
-    NotBlankTab = GetPrivateProfileInt(L"½çÃæÔöÇ¿", L"ĞÂ±êÇ©Ò³²»ÉúĞ§", 1, iniPath) == 1;
-    FrontNewTab = GetPrivateProfileInt(L"½çÃæÔöÇ¿", L"Ç°Ì¨´ò¿ªĞÂ±êÇ©", 1, iniPath) == 1;
+    DoubleClickCloseTab = GetPrivateProfileInt(L"ç•Œé¢å¢å¼º", L"åŒå‡»å…³é—­æ ‡ç­¾é¡µ", 0, iniPath) == 1;
+    RightClickCloseTab = GetPrivateProfileInt(L"ç•Œé¢å¢å¼º", L"å³é”®å…³é—­æ ‡ç­¾é¡µ", 0, iniPath) == 1;
+    KeepLastTab = GetPrivateProfileInt(L"ç•Œé¢å¢å¼º", L"ä¿ç•™æœ€åæ ‡ç­¾", 0, iniPath) == 1;
+    HoverTabSwitch = GetPrivateProfileInt(L"ç•Œé¢å¢å¼º", L"æ‚¬åœå¿«é€Ÿæ ‡ç­¾åˆ‡æ¢", 0, iniPath) == 1;
+    RightTabSwitch = GetPrivateProfileInt(L"ç•Œé¢å¢å¼º", L"å³é”®å¿«é€Ÿæ ‡ç­¾åˆ‡æ¢", 0, iniPath) == 1;
+    BookMarkNewTab = GetPrivateProfileInt(L"ç•Œé¢å¢å¼º", L"æ–°æ ‡ç­¾æ‰“å¼€ä¹¦ç­¾", 0, iniPath) == 1;
+    OpenUrlNewTab = GetPrivateProfileInt(L"ç•Œé¢å¢å¼º", L"æ–°æ ‡ç­¾æ‰“å¼€ç½‘å€", 0, iniPath) == 1;
+    NotBlankTab = GetPrivateProfileInt(L"ç•Œé¢å¢å¼º", L"æ–°æ ‡ç­¾é¡µä¸ç”Ÿæ•ˆ", 0, iniPath) == 1;
+    FrontNewTab = GetPrivateProfileInt(L"ç•Œé¢å¢å¼º", L"å‰å°æ‰“å¼€æ–°æ ‡ç­¾", , iniPath) == 1;
 
-    MouseGesture = GetPrivateProfileInt(L"Êó±êÊÖÊÆ", L"ÆôÓÃ", 1, iniPath) == 1;
+    MouseGesture = GetPrivateProfileInt(L"é¼ æ ‡æ‰‹åŠ¿", L"å¯ç”¨", 0, iniPath) == 1;
 
-    StopWeb = GetPrivateProfileInt(L"»ù±¾ÉèÖÃ", L"Í£ÓÃWEBÉèÖÃ", 0, iniPath) == 1;
+    StopWeb = GetPrivateProfileInt(L"åŸºæœ¬è®¾ç½®", L"åœç”¨WEBè®¾ç½®", 1, iniPath) == 1;
 }

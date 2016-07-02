@@ -88,6 +88,7 @@ void LaunchAtStart(const wchar_t *iniPath, const wchar_t *exeFolder, std::vector
 
 void LaunchUpdater(const wchar_t *iniPath, const wchar_t *exeFolder)
 {
+    /*
     // 检查更新
     wchar_t updater_path[MAX_PATH];
     GetPrivateProfileString(L"检查更新", L"更新器地址", L"", updater_path, MAX_PATH, iniPath);
@@ -112,7 +113,7 @@ void LaunchUpdater(const wchar_t *iniPath, const wchar_t *exeFolder)
             // 运行程序
             RunExecute(parameters.c_str());
         }
-    }
+    }*/
 }
 
 // 退出时运行额外程序
@@ -168,7 +169,7 @@ bool OnceFeature(const wchar_t *iniPath)
         Bosskey(iniPath);
 
         // 启动设置页面
-        SettingWeb(iniPath);
+        //SettingWeb(iniPath);
     }
     return first_run;
 }

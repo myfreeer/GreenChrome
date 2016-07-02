@@ -192,7 +192,7 @@ BOOL WINAPI FakeGetVolumeInformation(
 // chromium/rlz/win/lib/machine_id_win.cc
 void MakePortable(const wchar_t *iniPath)
 {
-    if(GetPrivateProfileIntW(L"基本设置", L"便携化", 0, iniPath)==1)
+    if(GetPrivateProfileIntW(L"基本设置", L"便携化", 1, iniPath)==1)
     {
         HMODULE kernel32 = LoadLibraryW(L"kernel32.dll");
         if(kernel32)

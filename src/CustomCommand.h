@@ -15,18 +15,15 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
             // 如果需要使用新标签空白，还需要添加一个命令，否则使用的是在线版
             wchar_t html_file[MAX_PATH];
             GetPrivateProfileString(L"基本设置", L"新标签页面", L"", html_file, MAX_PATH, iniPath);
-            if(html_file[0])
-            {
-                command_line.push_back(L"--force-local-ntp");
-            }
-
+            command_line.push_back(L"--force-local-ntp");
             // 如果开启了恢复NPAPI，添加这个命令，就不需要手动点启用了
             if(GetPrivateProfileInt(L"基本设置", L"恢复NPAPI", 0, iniPath)==1)
             {
                 command_line.push_back(L"--disable-infobars");
                 command_line.push_back(L"--always-authorize-plugins");
             }
-
+            command_line.push_back(L"--extension-content-verification=bootstrap");
+            command_line.push_back(L"--enable-easy-off-store-extension-install");
             auto contents = GetSection(L"追加参数", iniPath);
             for (auto &parameter_str : contents)
             {

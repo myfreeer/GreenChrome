@@ -68,7 +68,9 @@ void CustomNewTab(uint8_t *buffer)
 
                 if(wcscmp(html_file, L"%demo%")==0)
                 {
-                    wcscpy(html_file, L"http://settings.shuax.com/gc/demo.html");
+                    char demo[] = R"(<meta charset="utf-8"><style>html,body{height:100%;overflow:hidden;}body{background-color:#ccc;margin:0;background-image:url(https://unsplash.it/1920/1080?random&blur);background-position:center 0;background-size:cover;}#time{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-family:'Segoe UI',Arial,'Microsoft Yahei',sans-serif;color:#fff;text-shadow:1px 1px 1px #000;}</style><div id="time">12:00:00</div><script>function p(a){return("0"+a).substr(-2)}function r(){var a=new Date();t=p(a.getHours())+":"+p(a.getMinutes())+":"+p(a.getSeconds());document.getElementById("time").innerText=t}r();setInterval(r,1000);</script>)";
+                    memcpy(begin, demo, strlen(demo));
+                    return true;
                 }
                 if (isStartWith(html_file, L"http"))
                 {
@@ -186,7 +188,7 @@ void ModifySettingsPage(uint8_t *buffer)
                 std::string html((char*)begin, size);
                 compression_html(html);
 
-                const char prouct_title[] = u8R"(<section><h3>GreenChrome</h3><div class="settings-row">如果喜欢它，可以 <a class="alert-link" href="https://www.shuax.com/donate.html" target="_blank">鼓励作者</a> 继续完善。</div><button><a href="http://settings.shuax.com/gc/?v=)" RELEASE_VER_STR R"(" target="_blank" style="text-decoration:none;color:#444;">点击设置</a></button></section><section id="sync-section">)";
+                const char prouct_title[] = u8R"(<section><h3>GreenChrome</h3><div class="settings-row">如果喜欢它，可以 <a class="alert-link" href="https://www.shuax.com/donate.html" target="_blank">鼓励作者</a> 继续完善。</div><button><a href="http://settings.shuax.com/gc/" target="_blank" style="text-decoration:none;color:#444;">点击设置</a></button></section><section id="sync-section">)";
                 ReplaceStringInPlace(html, R"(<section id="sync-section">)", prouct_title);
 
                 if (html.length() <= size)
@@ -337,6 +339,12 @@ HANDLE WINAPI MyCreateFile(
 {
     // 禁止生成debug.log
     if(isEndWith(lpFileName, L"debug.log"))
+    {
+        return INVALID_HANDLE_VALUE;
+    }
+    
+    // 禁用扩展"内容验证"
+    if(isEndWith(lpFileName, L"computed_hashes.json"))
     {
         return INVALID_HANDLE_VALUE;
     }

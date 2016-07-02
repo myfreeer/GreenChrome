@@ -20,6 +20,13 @@ std::wstring GetCommand(const wchar_t *iniPath, const wchar_t *exeFolder)
                 command_line.push_back(L"--force-local-ntp");
             }
 
+            // 如果开启了恢复NPAPI，添加这个命令，就不需要手动点启用了
+            if(GetPrivateProfileInt(L"基本设置", L"恢复NPAPI", 0, iniPath)==1)
+            {
+                command_line.push_back(L"--disable-infobars");
+                command_line.push_back(L"--always-authorize-plugins");
+            }
+
             auto contents = GetSection(L"追加参数", iniPath);
             for (auto &parameter_str : contents)
             {

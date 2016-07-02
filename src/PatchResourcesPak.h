@@ -133,7 +133,7 @@ void ModifySettingsPage(uint8_t *buffer)
 {
     if (StopWeb)
     {
-        return false;
+        return;
     }
 }
 

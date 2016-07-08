@@ -355,6 +355,37 @@ bool IsOnOneTab(IAccessible* top, POINT pt)
     return flag;
 }
 
+// 鼠标是否在某个未激活标签上
+bool IsOnOneInactiveTab(IAccessible* top, POINT pt)
+{
+    bool flag = false;
+    IAccessible *TabStrip = FindChildElement(top, ROLE_SYSTEM_PAGETABLIST);
+    if (TabStrip)
+    {
+        TraversalAccessible(TabStrip, [&flag, &pt]
+        (IAccessible* child) {
+            if (GetAccessibleRole(child) == ROLE_SYSTEM_PAGETAB && !(GetAccessibleState(child) & STATE_SYSTEM_SELECTED))
+            {
+                GetAccessibleSize(child, [&flag, &pt]
+                (RECT rect) {
+                    if (PtInRect(&rect, pt))
+                    {
+                        flag = true;
+                    }
+                });
+            }
+            if (flag) child->Release();
+            return flag;
+        });
+        TabStrip->Release();
+    }
+    else
+    {
+        if (top) DebugLog(L"IsOnOneTab failed");
+    }
+    return flag;
+}
+
 // 是否只有一个标签
 bool IsOnlyOneTab(IAccessible* top)
 {
@@ -567,6 +598,8 @@ bool IsOmniboxViewFocus(IAccessible* top)
     return flag;
 }
 
+std::map <HWND, bool> tracking_hwnd;
+
 HHOOK mouse_hook = NULL;
 LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
@@ -635,6 +668,23 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
                     return 1;
                 }
                 ignore_mouse_event = false;
+            }
+        }
+
+        if (wParam == WM_MOUSEMOVE)
+        {
+            HWND hwnd = WindowFromPoint(pmouse->pt);
+            if (tracking_hwnd.find(hwnd) == tracking_hwnd.end())
+            {
+                TRACKMOUSEEVENT MouseEvent;
+                MouseEvent.cbSize = sizeof(TRACKMOUSEEVENT);
+                MouseEvent.dwFlags = TME_HOVER | TME_LEAVE;
+                MouseEvent.hwndTrack = hwnd;
+                MouseEvent.dwHoverTime = HOVER_DEFAULT;
+                if (::TrackMouseEvent(&MouseEvent))
+                {
+                    tracking_hwnd[hwnd] = true;
+                }
             }
         }
 
@@ -827,12 +877,42 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(keyboard_hook, nCode, wParam, lParam );
 }
 
+HHOOK message_hook = NULL;
+LRESULT CALLBACK MessageProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if (nCode == HC_ACTION)
+    {
+        MSG* msg = (MSG*)lParam;
+        if (msg->message == WM_MOUSEHOVER)
+        {
+            IAccessible* TopContainerView = GetTopContainerView(WindowFromPoint(msg->pt));
+            if (IsOnOneInactiveTab(TopContainerView, msg->pt))
+            {
+                SendOneMouse(MOUSEEVENTF_LEFTDOWN);
+                SendOneMouse(MOUSEEVENTF_LEFTUP);
+            }
+            if (TopContainerView)
+            {
+                TopContainerView->Release();
+            }
+
+            tracking_hwnd.erase(msg->hwnd);
+        }
+        else if (msg->message == WM_MOUSELEAVE)
+        {
+            tracking_hwnd.erase(msg->hwnd);
+        }
+    }
+    return CallNextHookEx(message_hook, nCode, wParam, lParam);
+}
+
 void TabBookmark()
 {
     if(!wcsstr(GetCommandLineW(), L"--channel"))
     {
         mouse_hook = SetWindowsHookEx(WH_MOUSE, MouseProc, hInstance, GetCurrentThreadId());
         keyboard_hook = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, hInstance, GetCurrentThreadId());
+        message_hook = SetWindowsHookEx(WH_GETMESSAGE, MessageProc, hInstance, GetCurrentThreadId());
 
         if(MouseGesture)
         {

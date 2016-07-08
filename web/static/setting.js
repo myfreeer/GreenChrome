@@ -30,6 +30,7 @@ function Render(response)
 	// 界面增强
 	$('#DoubleClickCloseTab').attr("checked",response["界面增强"]["双击关闭标签页"]=="1");
 	$('#RightClickCloseTab').attr("checked",response["界面增强"]["右键关闭标签页"]=="1");
+	$('#HoverActivateTab').attr("checked",response["界面增强"]["悬停激活标签页"]=="1");
 	$('#KeepLastTab').attr("checked",response["界面增强"]["保留最后标签"]=="1");
 	$('#HoverTabSwitch').attr("checked",response["界面增强"]["悬停快速标签切换"]=="1");
 	$('#RightTabSwitch').attr("checked",response["界面增强"]["右键快速标签切换"]=="1");
@@ -192,6 +193,11 @@ function get_setting()
 {
 	AJAX("get_setting", {}, function(response){
 		Render(response);
+
+		if(response["version"]!="5.9.6")
+		{
+			$("#update_tips").parent().removeClass("hide")
+		}
 	})
 }
 
@@ -227,19 +233,6 @@ function probe_interface(port)
 			Render(response)
 		}
 	});
-}
-
-function getUrlVars()
-{
-    var vars = [], hash;
-    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
-    for(var i = 0; i < hashes.length; i++)
-    {
-        hash = hashes[i].split('=');
-        vars.push(hash[0]);
-        vars[hash[0]] = hash[1];
-    }
-    return vars;
 }
 
 $(document).ready(function() {
@@ -310,10 +303,4 @@ $(document).ready(function() {
 
 		return false;
 	});
-
-	var version = getUrlVars()["v"];
-	if(version!="5.9.5")
-	{
-		$("#update_tips").parent().removeClass("hide")
-	}
 });

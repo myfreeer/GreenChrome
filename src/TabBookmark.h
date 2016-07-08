@@ -599,14 +599,14 @@ bool IsOmniboxViewFocus(IAccessible* top)
 }
 
 std::map <HWND, bool> tracking_hwnd;
+bool ignore_mouse_event = false;
 
 HHOOK mouse_hook = NULL;
 LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     static bool close_tab_ing = false;
     static bool wheel_tab_ing = false;
-    static bool ignore_mouse_event = false;
-
+    
     bool close_tab = false;
     bool keep_tab = false;
     bool bookmark_new_tab = false;
@@ -615,7 +615,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
     {
         PMOUSEHOOKSTRUCT pmouse = (PMOUSEHOOKSTRUCT) lParam;
 
-        if(wParam==WM_RBUTTONUP && wheel_tab_ing)
+        if (wParam == WM_RBUTTONUP && wheel_tab_ing)
         {
             wheel_tab_ing = false;
             if (MouseGesture)
@@ -630,15 +630,15 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
         {
             bool handled = false;
 
-            if(wParam==WM_RBUTTONDOWN)
+            if (wParam == WM_RBUTTONDOWN || wParam == WM_NCRBUTTONDOWN)
             {
                 handled = gesture_mgr.OnRButtonDown(pmouse);
             }
-            if(wParam==WM_RBUTTONUP)
+            if (wParam == WM_RBUTTONUP || wParam == WM_NCRBUTTONUP)
             {
                 handled = gesture_mgr.OnRButtonUp(pmouse);
             }
-            if(wParam==WM_MOUSEMOVE || wParam==WM_NCMOUSEMOVE)
+            if (wParam == WM_MOUSEMOVE || wParam == WM_NCMOUSEMOVE)
             {
                 handled = gesture_mgr.OnMouseMove(pmouse);
             }
@@ -671,7 +671,16 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
             }
         }
 
-        if (wParam == WM_MOUSEMOVE)
+        if (HoverActivateTab && ignore_mouse_event)
+        {
+            if (wParam == WM_LBUTTONDBLCLK)
+            {
+                ignore_mouse_event = false;
+                return 1;
+            }
+        }
+
+        if (HoverActivateTab && wParam == WM_MOUSEMOVE)
         {
             HWND hwnd = WindowFromPoint(pmouse->pt);
             if (tracking_hwnd.find(hwnd) == tracking_hwnd.end())
@@ -888,8 +897,14 @@ LRESULT CALLBACK MessageProc(int nCode, WPARAM wParam, LPARAM lParam)
             IAccessible* TopContainerView = GetTopContainerView(WindowFromPoint(msg->pt));
             if (IsOnOneInactiveTab(TopContainerView, msg->pt))
             {
+                ignore_mouse_event = true;
                 SendOneMouse(MOUSEEVENTF_LEFTDOWN);
                 SendOneMouse(MOUSEEVENTF_LEFTUP);
+                std::thread th([]() {
+                    Sleep(500);
+                    ignore_mouse_event = false;
+                });
+                th.detach();
             }
             if (TopContainerView)
             {

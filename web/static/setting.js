@@ -19,6 +19,12 @@ function AJAX(url, data, callback)
 
 function Render(response)
 {
+	//判断版本
+	if(response["version"]!="5.9.6")
+	{
+		$("#update_tips").parent().removeClass("hide")
+	}
+
 	// 基本设置
 	$("#UserData").val(response["基本设置"]["数据目录"])
 	$("#BossKey").val(response["基本设置"]["老板键"])
@@ -193,11 +199,6 @@ function get_setting()
 {
 	AJAX("get_setting", {}, function(response){
 		Render(response);
-
-		if(response["version"]!="5.9.6")
-		{
-			$("#update_tips").parent().removeClass("hide")
-		}
 	})
 }
 

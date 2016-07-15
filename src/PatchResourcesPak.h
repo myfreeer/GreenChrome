@@ -409,36 +409,28 @@ void PatchResourcesPak(const wchar_t *iniPath)
           }
         */
         #ifdef _WIN64
-        BYTE search[] = {0x02, 0x00, 0x00, 0x0F, 0x84, 0x88, 0x00, 0x00, 0x00, 0x48};
-        uint8_t *unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
-        if(unsafe)
+        BYTE search[][10] = {
+            { 0x02, 0x00, 0x00, 0x0F, 0x84, 0x88, 0x00, 0x00, 0x00, 0x48 },
+            { 0x02, 0x00, 0x00, 0x0F, 0x84, 0x8D, 0x00, 0x00, 0x00, 0x45 },
+            { 0x02, 0x00, 0x00, 0x0F, 0x84, 0xC9, 0x00, 0x00, 0x00, 0x41 },
+            { 0x02, 0x00, 0x00, 0x0F, 0x84, 0xBD, 0x00, 0x00, 0x00, 0x41 },
+        };
+        
+        bool crack_ok = false;
+        for (size_t i = 0; i < _countof(search); i++)
         {
-            BYTE patch[] = {0x90, 0xE9};
-            WriteMemory(unsafe + 3, patch, sizeof(patch));
-        }
-        else
-        {
-            BYTE search[] = { 0x02, 0x00, 0x00, 0x0F, 0x84, 0x8D, 0x00, 0x00, 0x00, 0x45 };
-            unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
+            uint8_t *unsafe = SearchModule(L"chrome.dll", search[i], sizeof(search[i]));
             if (unsafe)
             {
                 BYTE patch[] = { 0x90, 0xE9 };
                 WriteMemory(unsafe + 3, patch, sizeof(patch));
+                crack_ok = true;
+                break;
             }
-            else
-            {
-                BYTE search[] = { 0x02, 0x00, 0x00, 0x0F, 0x84, 0xC9, 0x00, 0x00, 0x00, 0x41 };
-                unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
-                if (unsafe)
-                {
-                    BYTE patch[] = { 0x90, 0xE9 };
-                    WriteMemory(unsafe + 3, patch, sizeof(patch));
-                }
-                else
-                {
-                    DebugLog(L"patch unsafe-js failed");
-                }
-            }
+        }
+        if (!crack_ok)
+        {
+            DebugLog(L"patch unsafe-js failed");
         }
         #else
         BYTE search[] = {0x01, 0x00, 0x00, 0x00, 0x74, 0x5F, 0x68};

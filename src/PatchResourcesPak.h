@@ -362,6 +362,81 @@ HANDLE WINAPI MyCreateFile(
     return file;
 }
 
+// 破解自定义页面安全策略
+void CrackCSP()
+{
+    /*const char kChromeURLContentSecurityPolicyHeaderBase[] =
+    "Content-Security-Policy: ";
+
+    if (add_content_security_policy_) {
+    std::string base = kChromeURLContentSecurityPolicyHeaderBase;
+    base.append(RequiresUnsafeEval() ? " 'unsafe-eval'; " : "; ");
+    base.append(content_security_policy_object_source_);
+    base.append(content_security_policy_frame_source_);
+    info->headers->AddHeader(base);
+    }
+
+    if (add_content_security_policy_) {
+    std::string base = kChromeURLContentSecurityPolicyHeaderBase;
+    base.append(content_security_policy_script_source_);
+    base.append(content_security_policy_object_source_);
+    base.append(content_security_policy_child_source_);
+    base.append(content_security_policy_style_source_);
+    base.append(content_security_policy_image_source_);
+    info->headers->AddHeader(base);
+    }
+    */
+#ifdef _WIN64
+    BYTE search[][10] = {
+        { 0x02, 0x00, 0x00, 0x0F, 0x84, 0x88, 0x00, 0x00, 0x00, 0x48 },
+        { 0x02, 0x00, 0x00, 0x0F, 0x84, 0x8D, 0x00, 0x00, 0x00, 0x45 },
+        { 0x02, 0x00, 0x00, 0x0F, 0x84, 0xC9, 0x00, 0x00, 0x00, 0x41 },
+        { 0x02, 0x00, 0x00, 0x0F, 0x84, 0xBD, 0x00, 0x00, 0x00, 0x41 },
+    };
+
+    bool crack_ok = false;
+    for (size_t i = 0; i < _countof(search); i++)
+    {
+        uint8_t *csp = SearchModule(L"chrome.dll", search[i], sizeof(search[i]));
+        if (csp)
+        {
+            BYTE patch[] = { 0x90, 0xE9 };
+            WriteMemory(csp + 3, patch, sizeof(patch));
+            crack_ok = true;
+            break;
+        }
+    }
+    if (!crack_ok)
+    {
+        DebugLog(L"patch csp failed");
+    }
+#else
+    BYTE search1[] = { 0x01, 0x00, 0x00, 0x00, 0x74, 0x5F, 0x68 };
+    BYTE search2[] = { 0x99, 0x01, 0x00, 0x00, 0x00, 0x0F, 0x84 };
+    BYTE search3[] = { 0xA1, 0x01, 0x00, 0x00, 0x00, 0x0F, 0x84 };
+    uint8_t *csp = SearchModule(L"chrome.dll", search1, sizeof(search1));
+    if (csp)
+    {
+        BYTE patch[] = { 0xEB };
+        WriteMemory(csp + 4, patch, sizeof(patch));
+    }
+    else if (csp = SearchModule(L"chrome.dll", search2, sizeof(search2)))
+    {
+        BYTE patch[] = { 0x90, 0xE9 };
+        WriteMemory(csp + 5, patch, sizeof(patch));
+    }
+    else if (csp = SearchModule(L"chrome.dll", search3, sizeof(search3)))
+    {
+        BYTE patch[] = { 0x90, 0xE9 };
+        WriteMemory(csp + 5, patch, sizeof(patch));
+    }
+    else
+    {
+        DebugLog(L"patch csp failed");
+    }
+#endif
+}
+
 void PatchResourcesPak(const wchar_t *iniPath)
 {
     GetPrivateProfileStringW(L"基本设置", L"新标签页面", L"", html_file, MAX_PATH, iniPath);
@@ -386,75 +461,8 @@ void PatchResourcesPak(const wchar_t *iniPath)
 
     if(html_file[0])
     {
-        // 破解自定义页面不能使用js
-        /*const char kChromeURLContentSecurityPolicyHeaderBase[] =
-            "Content-Security-Policy: ";
-
-          if (add_content_security_policy_) {
-            std::string base = kChromeURLContentSecurityPolicyHeaderBase;
-            base.append(RequiresUnsafeEval() ? " 'unsafe-eval'; " : "; ");
-            base.append(content_security_policy_object_source_);
-            base.append(content_security_policy_frame_source_);
-            info->headers->AddHeader(base);
-          }
-
-          if (add_content_security_policy_) {
-          std::string base = kChromeURLContentSecurityPolicyHeaderBase;
-          base.append(content_security_policy_script_source_);
-          base.append(content_security_policy_object_source_);
-          base.append(content_security_policy_child_source_);
-          base.append(content_security_policy_style_source_);
-          base.append(content_security_policy_image_source_);
-          info->headers->AddHeader(base);
-          }
-        */
-        #ifdef _WIN64
-        BYTE search[][10] = {
-            { 0x02, 0x00, 0x00, 0x0F, 0x84, 0x88, 0x00, 0x00, 0x00, 0x48 },
-            { 0x02, 0x00, 0x00, 0x0F, 0x84, 0x8D, 0x00, 0x00, 0x00, 0x45 },
-            { 0x02, 0x00, 0x00, 0x0F, 0x84, 0xC9, 0x00, 0x00, 0x00, 0x41 },
-            { 0x02, 0x00, 0x00, 0x0F, 0x84, 0xBD, 0x00, 0x00, 0x00, 0x41 },
-        };
-        
-        bool crack_ok = false;
-        for (size_t i = 0; i < _countof(search); i++)
-        {
-            uint8_t *unsafe = SearchModule(L"chrome.dll", search[i], sizeof(search[i]));
-            if (unsafe)
-            {
-                BYTE patch[] = { 0x90, 0xE9 };
-                WriteMemory(unsafe + 3, patch, sizeof(patch));
-                crack_ok = true;
-                break;
-            }
-        }
-        if (!crack_ok)
-        {
-            DebugLog(L"patch unsafe-js failed");
-        }
-        #else
-        BYTE search[] = {0x01, 0x00, 0x00, 0x00, 0x74, 0x5F, 0x68};
-        uint8_t *unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
-        if(unsafe)
-        {
-            BYTE patch[] = {0xEB};
-            WriteMemory(unsafe + 4, patch, sizeof(patch));
-        }
-        else
-        {
-            BYTE search[] = { 0x99, 0x01, 0x00, 0x00, 0x00, 0x0F, 0x84 };
-            uint8_t *unsafe = SearchModule(L"chrome.dll", search, sizeof(search));
-            if (unsafe)
-            {
-                BYTE patch[] = { 0x90, 0xE9 };
-                WriteMemory(unsafe + 5, patch, sizeof(patch));
-            }
-            else
-            {
-                DebugLog(L"patch unsafe-js failed");
-            }
-        }
-        #endif
+        // 破解自定义页面安全策略
+        CrackCSP();
     }
 
     MH_STATUS status = MH_CreateHook(CreateFileW, MyCreateFile, (LPVOID*)&RawCreateFile);

@@ -356,16 +356,23 @@ bool IsOnOneTab(IAccessible* top, POINT pt)
 }
 
 // 鼠标是否在某个未激活标签上
-bool IsOnOneInactiveTab(IAccessible* top, POINT pt)
+bool IsOnOneInactiveTab(IAccessible* top, POINT pt, int &index)
 {
     bool flag = false;
+    index = 0;
     IAccessible *TabStrip = FindChildElement(top, ROLE_SYSTEM_PAGETABLIST);
     if (TabStrip)
     {
-        TraversalAccessible(TabStrip, [&flag, &pt]
+        TraversalAccessible(TabStrip, [&flag, &pt, &index]
         (IAccessible* child) {
-            if (GetAccessibleRole(child) == ROLE_SYSTEM_PAGETAB && !(GetAccessibleState(child) & STATE_SYSTEM_SELECTED))
+            if (GetAccessibleRole(child) == ROLE_SYSTEM_PAGETAB)
             {
+                index++;
+                if (GetAccessibleState(child) & STATE_SYSTEM_SELECTED)
+                {
+                    // 跳过已经选中标签
+                    return false;
+                }
                 GetAccessibleSize(child, [&flag, &pt]
                 (RECT rect) {
                     if (PtInRect(&rect, pt))
@@ -895,16 +902,25 @@ LRESULT CALLBACK MessageProc(int nCode, WPARAM wParam, LPARAM lParam)
         if (msg->message == WM_MOUSEHOVER)
         {
             IAccessible* TopContainerView = GetTopContainerView(WindowFromPoint(msg->pt));
-            if (IsOnOneInactiveTab(TopContainerView, msg->pt))
+            int index = 0;
+            if (IsOnOneInactiveTab(TopContainerView, msg->pt, index))
             {
-                ignore_mouse_event = true;
-                SendOneMouse(MOUSEEVENTF_LEFTDOWN);
-                SendOneMouse(MOUSEEVENTF_LEFTUP);
-                std::thread th([]() {
-                    Sleep(500);
-                    ignore_mouse_event = false;
-                });
-                th.detach();
+                if (index >= 1 && index <= 8)
+                {
+                    //1到8标签用ctrl+数字直接跳
+                    SendKeys(VK_CONTROL, '0' + index);
+                }
+                else
+                {
+                    ignore_mouse_event = true;
+                    SendOneMouse(MOUSEEVENTF_LEFTDOWN);
+                    SendOneMouse(MOUSEEVENTF_LEFTUP);
+                    std::thread th([]() {
+                        Sleep(500);
+                        ignore_mouse_event = false;
+                    });
+                    th.detach();
+                }
             }
             if (TopContainerView)
             {

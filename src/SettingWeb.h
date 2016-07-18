@@ -57,6 +57,11 @@ static bool http_post(struct mg_connection *nc, struct http_message *hm)
         cJSON_AddItemToObject(root, utf16to8(L"界面增强").c_str(), node);
 
         node = cJSON_CreateObject();
+        ReadValue(node, iniPath, L"检查更新", L"更新器地址");
+        ReadValue(node, iniPath, L"检查更新", L"检查版本");
+        cJSON_AddItemToObject(root, utf16to8(L"检查更新").c_str(), node);
+
+        node = cJSON_CreateObject();
         ReadValue(node, iniPath, L"鼠标手势", L"启用");
         ReadValue(node, iniPath, L"鼠标手势", L"轨迹");
         ReadValue(node, iniPath, L"鼠标手势", L"动作");

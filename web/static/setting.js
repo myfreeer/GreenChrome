@@ -20,7 +20,7 @@ function AJAX(url, data, callback)
 function Render(response)
 {
 	//判断版本
-	if(response["version"]!="5.9.6")
+	if(response["version"]!="5.9.7")
 	{
 		$("#update_tips").parent().removeClass("hide")
 	}
@@ -193,6 +193,14 @@ function Render(response)
 		}
 		return false;
 	});
+
+	$("#ChromeUpdater").val(response["检查更新"]["更新器地址"])
+	var check_version = response["检查更新"]["检查版本"].split(" ", 2)
+	if(check_version.length==2)
+	{
+		$("#branch").val(check_version[0]);
+		$("#arch").val(check_version[1]);
+	}
 }
 
 function get_setting()
@@ -233,6 +241,17 @@ function probe_interface(port)
 			interface_ok = true
 			Render(response)
 		}
+	});
+}
+
+function on_check_version()
+{
+	var parameter = {}
+	parameter.section = "检查更新"
+	parameter.name = "检查版本"
+	parameter.value = $("#branch").val() + " " + $("#arch").val()
+
+	AJAX("set_setting", parameter, function(response){
 	});
 }
 
@@ -304,4 +323,7 @@ $(document).ready(function() {
 
 		return false;
 	});
+
+	$("#branch").change(on_check_version);
+	$("#arch").change(on_check_version);
 });

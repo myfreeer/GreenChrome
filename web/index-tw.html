@@ -9,6 +9,7 @@
     <meta name="format-detection" content="telephone=no"/>
     <link href="static/bootstrap.min.css" rel="stylesheet">
     <link href="static/bootstrap-colorpicker.min.css" rel="stylesheet">
+    <link href="static/bootstrap-select.min.css" rel="stylesheet">
     <style>
       body {
         font-family: 'Segoe UI',Arial,'Microsoft Yahei',sans-serif;
@@ -30,6 +31,7 @@
             <li><a href="#start-run">啟動時執行</a></li>
             <li><a href="#end-run">關閉時執行</a></li>
             <li><a href="#mouse-gesture">滑鼠手勢</a></li>
+            <li><a href="#check-update">Chrome更新</a></li>
           </ul>
         </div>
 
@@ -314,12 +316,44 @@
             </div>
           </div>
 
+          <a name="check-update"></a>
+          <h4>檢查 Chrome 更新</h4>
+          <div class="row">
+            <div class="col-xs-offset-0 col-xs-11">
+
+              <div class="form-inline">
+                <p class="form-control-static">檢查版本：</p>
+                <select id="branch" class="selectpicker">
+                  <option value="Stable">穩定版 Stable</option>
+                  <option value="Beta">測試版 Beta</option>
+                  <option value="Dev">開發版 Dev</option>
+                  <option value="Canary">金絲雀 Canary</option>
+                </select>
+                <select id="arch" class="selectpicker">
+                  <option value="x86">32位 x86</option>
+                  <option value="x64">64位 x64</option>
+                </select>
+              </div>
+
+              <div class="form-inline">
+                <p class="form-control-static">更新器地址：</p>
+                <input type="text" class="form-control kv" style="width:70%;" id="ChromeUpdater" data-section="检查更新" data-name="更新器地址">
+                <div class="text-muted">　如果不需要每次啟動chrome自動檢查更新，就直接清空這個數據</div>
+                <p class="text-muted">　如果妳想手動更新，可訪問 <a href="https://api.shuax.com/tools/getchrome" target="_blank">這裏</a> 下載Chrome離線安裝包</p>
+              </div>
+
+            </div>
+          </div>
+
+          <h4></h4>
+
         </div>
       </div>
     </div>
     <script src="static/jquery.min.js"></script>
     <script src="static/bootstrap.min.js"></script>
     <script src="static/bootstrap-colorpicker.min.js"></script>
-    <script src="static/setting.js?5.9.6"></script>
+    <script src="static/bootstrap-select.min.js"></script>
+    <script src="static/setting.js?5.9.7"></script>
   </body>
 </html>

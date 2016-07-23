@@ -20,7 +20,7 @@ function AJAX(url, data, callback)
 function Render(response)
 {
 	//判断版本
-	if(response["version"]!="5.9.7")
+	if(response["version"]!="5.9.8")
 	{
 		$("#update_tips").parent().removeClass("hide")
 	}
@@ -37,6 +37,7 @@ function Render(response)
 	$('#DoubleClickCloseTab').attr("checked",response["界面增强"]["双击关闭标签页"]=="1");
 	$('#RightClickCloseTab').attr("checked",response["界面增强"]["右键关闭标签页"]=="1");
 	$('#HoverActivateTab').attr("checked",response["界面增强"]["悬停激活标签页"]=="1");
+	$("#HoverTime").val(response["界面增强"]["悬停时间"]);
 	$('#KeepLastTab').attr("checked",response["界面增强"]["保留最后标签"]=="1");
 	$('#HoverTabSwitch').attr("checked",response["界面增强"]["悬停快速标签切换"]=="1");
 	$('#RightTabSwitch').attr("checked",response["界面增强"]["右键快速标签切换"]=="1");
@@ -198,8 +199,8 @@ function Render(response)
 	var check_version = response["检查更新"]["检查版本"].split(" ", 2)
 	if(check_version.length==2)
 	{
-		$("#branch").val(check_version[0]);
-		$("#arch").val(check_version[1]);
+		$("#branch").selectpicker('val', check_version[0]);
+		$("#arch").selectpicker('val', check_version[1]);
 	}
 }
 

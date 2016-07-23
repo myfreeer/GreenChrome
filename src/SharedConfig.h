@@ -3,6 +3,7 @@
 bool DoubleClickCloseTab = false;
 bool RightClickCloseTab = false;
 bool HoverActivateTab = false;
+int HoverTime = HOVER_DEFAULT;
 bool KeepLastTab = false;
 bool HoverTabSwitch = false;
 bool RightTabSwitch = false;
@@ -21,6 +22,7 @@ void ReadConfig(const wchar_t *iniPath)
     DoubleClickCloseTab = GetPrivateProfileInt(L"界面增强", L"双击关闭标签页", 1, iniPath) == 1;
     RightClickCloseTab = GetPrivateProfileInt(L"界面增强", L"右键关闭标签页", 0, iniPath) == 1;
     HoverActivateTab = GetPrivateProfileInt(L"界面增强", L"悬停激活标签页", 0, iniPath) == 1;
+    HoverTime = GetPrivateProfileInt(L"界面增强", L"悬停时间", HOVER_DEFAULT, iniPath);
     KeepLastTab = GetPrivateProfileInt(L"界面增强", L"保留最后标签", 1, iniPath) == 1;
     HoverTabSwitch = GetPrivateProfileInt(L"界面增强", L"悬停快速标签切换", 1, iniPath) == 1;
     RightTabSwitch = GetPrivateProfileInt(L"界面增强", L"右键快速标签切换", 1, iniPath) == 1;

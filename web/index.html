@@ -134,7 +134,13 @@
                   <input type="checkbox" id="HoverActivateTab" data-section="界面增强" data-name="悬停激活标签页">
                   悬停激活标签页
                 </label>
-                <div class="text-muted">　　鼠标悬停在标签页一定时间将会自动激活标签页，注意不要放在关闭按钮上</div>
+                <div class="text-muted">　　鼠标悬停在标签页一定时间将会自动激活标签页</div>
+
+                <div class="form-inline">
+                  <div class="form-control-static">　　悬停时间：</div>
+                  <input type="text" class="form-control kv" id="HoverTime" data-section="界面增强" data-name="悬停时间">
+                  <div class="form-control-static text-muted">悬停多久后激活标签页，单位毫秒，不填为系统默认值</div>
+                </div>
               </div>
 
               <div class="checkbox">
@@ -353,6 +359,6 @@
     <script src="static/bootstrap.min.js"></script>
     <script src="static/bootstrap-colorpicker.min.js"></script>
     <script src="static/bootstrap-select.min.js"></script>
-    <script src="static/setting.js?5.9.7"></script>
+    <script src="static/setting.js?5.9.8"></script>
   </body>
 </html>

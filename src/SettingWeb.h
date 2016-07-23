@@ -47,6 +47,7 @@ static bool http_post(struct mg_connection *nc, struct http_message *hm)
         ReadValue(node, iniPath, L"界面增强", L"双击关闭标签页");
         ReadValue(node, iniPath, L"界面增强", L"右键关闭标签页");
         ReadValue(node, iniPath, L"界面增强", L"悬停激活标签页");
+        ReadValue(node, iniPath, L"界面增强", L"悬停时间");
         ReadValue(node, iniPath, L"界面增强", L"保留最后标签");
         ReadValue(node, iniPath, L"界面增强", L"悬停快速标签切换");
         ReadValue(node, iniPath, L"界面增强", L"右键快速标签切换");

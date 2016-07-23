@@ -355,29 +355,101 @@ bool IsOnOneTab(IAccessible* top, POINT pt)
     return flag;
 }
 
+// 是否悬停在关闭按钮上
+bool IsOnOneInactiveTabCloseButton(IAccessible *node, POINT pt)
+{
+    bool flag = false;
+    TraversalAccessible(node, [&pt, &flag]
+    (IAccessible* child) {
+        if (GetAccessibleRole(child) == ROLE_SYSTEM_PUSHBUTTON)
+        {
+            GetAccessibleSize(child, [&flag, &pt]
+            (RECT rect) {
+                //调整大小，更精确匹配
+                rect.left += 4;
+                rect.top += 7;
+                rect.right -= 16;
+                rect.bottom -= 6;
+                if (PtInRect(&rect, pt))
+                {
+                    flag = true;
+                }
+            });
+        }
+        return false;
+    });
+    return flag;
+}
+
+// 获取到在第几个tab上
+int GetTabIndex(IAccessible *node, POINT pt)
+{
+    std::vector <RECT> tab_rects;
+    TraversalAccessible(node, [&]
+    (IAccessible* child) {
+        if (GetAccessibleRole(child) == ROLE_SYSTEM_PAGETAB)
+        {
+            GetAccessibleSize(child, [&]
+            (RECT rect) {
+                tab_rects.push_back(rect);
+            });
+        }
+        return false;
+    });
+    std::sort(tab_rects.begin(), tab_rects.end(), [](auto &a, auto &b) {
+        return a.left < b.left;
+    });
+
+    int index = 0;
+    for (auto rect : tab_rects)
+    {
+        index++;
+        if (PtInRect(&rect, pt))
+        {
+            break;
+        }
+    }
+
+    if (index >= 9)
+    {
+        if (index == tab_rects.size())
+        {
+            index = 9;
+        }
+        else
+        {
+            index = 0;
+        }
+
+    }
+    return index;
+}
+
 // 鼠标是否在某个未激活标签上
-bool IsOnOneInactiveTab(IAccessible* top, POINT pt, int &index)
+bool IsOnOneInactiveTab(IAccessible* top, POINT pt, int &index, bool &onclose)
 {
     bool flag = false;
     index = 0;
+    onclose = false;
     IAccessible *TabStrip = FindChildElement(top, ROLE_SYSTEM_PAGETABLIST);
     if (TabStrip)
     {
-        TraversalAccessible(TabStrip, [&flag, &pt, &index]
+        TraversalAccessible(TabStrip, [&]
         (IAccessible* child) {
             if (GetAccessibleRole(child) == ROLE_SYSTEM_PAGETAB)
             {
-                index++;
                 if (GetAccessibleState(child) & STATE_SYSTEM_SELECTED)
                 {
                     // 跳过已经选中标签
                     return false;
                 }
-                GetAccessibleSize(child, [&flag, &pt]
+                GetAccessibleSize(child, [&]
                 (RECT rect) {
                     if (PtInRect(&rect, pt))
                     {
                         flag = true;
+                        onclose = IsOnOneInactiveTabCloseButton(child, pt);
+                        index = GetTabIndex(TabStrip, pt);
                     }
                 });
             }
@@ -696,7 +768,8 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
                 MouseEvent.cbSize = sizeof(TRACKMOUSEEVENT);
                 MouseEvent.dwFlags = TME_HOVER | TME_LEAVE;
                 MouseEvent.hwndTrack = hwnd;
-                MouseEvent.dwHoverTime = HOVER_DEFAULT;
+                MouseEvent.dwHoverTime = HoverTime;
+                DebugLog(L"HoverTime %d", HoverTime);
                 if (::TrackMouseEvent(&MouseEvent))
                 {
                     tracking_hwnd[hwnd] = true;
@@ -893,6 +966,18 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(keyboard_hook, nCode, wParam, lParam );
 }
 
+void SendClick()
+{
+    ignore_mouse_event = true;
+    SendOneMouse(MOUSEEVENTF_LEFTDOWN);
+    SendOneMouse(MOUSEEVENTF_LEFTUP);
+    std::thread th([]() {
+        Sleep(500);
+        ignore_mouse_event = false;
+    });
+    th.detach();
+}
+
 HHOOK message_hook = NULL;
 LRESULT CALLBACK MessageProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
@@ -901,25 +986,36 @@ LRESULT CALLBACK MessageProc(int nCode, WPARAM wParam, LPARAM lParam)
         MSG* msg = (MSG*)lParam;
         if (msg->message == WM_MOUSEHOVER)
         {
-            IAccessible* TopContainerView = GetTopContainerView(WindowFromPoint(msg->pt));
+            HWND hwnd = WindowFromPoint(msg->pt);
+            IAccessible* TopContainerView = GetTopContainerView(hwnd);
             int index = 0;
-            if (IsOnOneInactiveTab(TopContainerView, msg->pt, index))
+            bool onclose;
+            if (IsOnOneInactiveTab(TopContainerView, msg->pt, index, onclose))
             {
-                if (index >= 1 && index <= 8)
+                if (onclose)
                 {
-                    //1到8标签用ctrl+数字直接跳
-                    SendKeys(VK_CONTROL, '0' + index);
+                    if (GetForegroundWindow() != hwnd)
+                    {
+                        SetForegroundWindow(hwnd);
+                    }
+                    if (index >= 1 && index <= 9)
+                    {
+                        // 1到8标签用ctrl+数字直接跳，9为最后一个标签
+                        SendKeys(VK_CONTROL, '0' + index);
+                    }
+                    else
+                    {
+                        // 移动鼠标位置点击后再移动回来
+                        POINT pt;
+                        GetCursorPos(&pt);
+                        SetCursorPos(pt.x - 30, pt.y);
+                        SendClick();
+                        SetCursorPos(pt.x, pt.y);
+                    }
                 }
                 else
                 {
-                    ignore_mouse_event = true;
-                    SendOneMouse(MOUSEEVENTF_LEFTDOWN);
-                    SendOneMouse(MOUSEEVENTF_LEFTUP);
-                    std::thread th([]() {
-                        Sleep(500);
-                        ignore_mouse_event = false;
-                    });
-                    th.detach();
+                    SendClick();
                 }
             }
             if (TopContainerView)

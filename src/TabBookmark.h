@@ -769,7 +769,6 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
                 MouseEvent.dwFlags = TME_HOVER | TME_LEAVE;
                 MouseEvent.hwndTrack = hwnd;
                 MouseEvent.dwHoverTime = HoverTime;
-                DebugLog(L"HoverTime %d", HoverTime);
                 if (::TrackMouseEvent(&MouseEvent))
                 {
                     tracking_hwnd[hwnd] = true;

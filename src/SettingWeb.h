@@ -46,6 +46,8 @@ static bool http_post(struct mg_connection *nc, struct http_message *hm)
         node = cJSON_CreateObject();
         ReadValue(node, iniPath, L"界面增强", L"双击关闭标签页");
         ReadValue(node, iniPath, L"界面增强", L"右键关闭标签页");
+        ReadValue(node, iniPath, L"界面增强", L"悬停激活标签页");
+        ReadValue(node, iniPath, L"界面增强", L"悬停时间");
         ReadValue(node, iniPath, L"界面增强", L"保留最后标签");
         ReadValue(node, iniPath, L"界面增强", L"悬停快速标签切换");
         ReadValue(node, iniPath, L"界面增强", L"右键快速标签切换");
@@ -56,10 +58,17 @@ static bool http_post(struct mg_connection *nc, struct http_message *hm)
         cJSON_AddItemToObject(root, utf16to8(L"界面增强").c_str(), node);
 
         node = cJSON_CreateObject();
+        ReadValue(node, iniPath, L"检查更新", L"更新器地址");
+        ReadValue(node, iniPath, L"检查更新", L"检查版本");
+        cJSON_AddItemToObject(root, utf16to8(L"检查更新").c_str(), node);
+
+        node = cJSON_CreateObject();
         ReadValue(node, iniPath, L"鼠标手势", L"启用");
         ReadValue(node, iniPath, L"鼠标手势", L"轨迹");
         ReadValue(node, iniPath, L"鼠标手势", L"动作");
         cJSON_AddItemToObject(root, utf16to8(L"鼠标手势开关").c_str(), node);
+
+        cJSON_AddItemToObject(root, utf16to8(L"version").c_str(), cJSON_CreateString(RELEASE_VER_STR));
 
         char *str = cJSON_PrintUnformatted(root);
         int len = (int)strlen(str);

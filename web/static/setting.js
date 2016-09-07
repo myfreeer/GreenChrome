@@ -19,6 +19,12 @@ function AJAX(url, data, callback)
 
 function Render(response)
 {
+	//判断版本
+	if(response["version"]!="5.9.8")
+	{
+		$("#update_tips").parent().removeClass("hide")
+	}
+
 	// 基本设置
 	$("#UserData").val(response["基本设置"]["数据目录"])
 	$("#BossKey").val(response["基本设置"]["老板键"])
@@ -30,6 +36,8 @@ function Render(response)
 	// 界面增强
 	$('#DoubleClickCloseTab').attr("checked",response["界面增强"]["双击关闭标签页"]=="1");
 	$('#RightClickCloseTab').attr("checked",response["界面增强"]["右键关闭标签页"]=="1");
+	$('#HoverActivateTab').attr("checked",response["界面增强"]["悬停激活标签页"]=="1");
+	$("#HoverTime").val(response["界面增强"]["悬停时间"]);
 	$('#KeepLastTab').attr("checked",response["界面增强"]["保留最后标签"]=="1");
 	$('#HoverTabSwitch').attr("checked",response["界面增强"]["悬停快速标签切换"]=="1");
 	$('#RightTabSwitch').attr("checked",response["界面增强"]["右键快速标签切换"]=="1");
@@ -186,6 +194,14 @@ function Render(response)
 		}
 		return false;
 	});
+
+	$("#ChromeUpdater").val(response["检查更新"]["更新器地址"])
+	var check_version = response["检查更新"]["检查版本"].split(" ", 2)
+	if(check_version.length==2)
+	{
+		$("#branch").selectpicker('val', check_version[0]);
+		$("#arch").selectpicker('val', check_version[1]);
+	}
 }
 
 function get_setting()
@@ -229,17 +245,15 @@ function probe_interface(port)
 	});
 }
 
-function getUrlVars()
+function on_check_version()
 {
-    var vars = [], hash;
-    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
-    for(var i = 0; i < hashes.length; i++)
-    {
-        hash = hashes[i].split('=');
-        vars.push(hash[0]);
-        vars[hash[0]] = hash[1];
-    }
-    return vars;
+	var parameter = {}
+	parameter.section = "检查更新"
+	parameter.name = "检查版本"
+	parameter.value = $("#branch").val() + " " + $("#arch").val()
+
+	AJAX("set_setting", parameter, function(response){
+	});
 }
 
 $(document).ready(function() {
@@ -311,9 +325,6 @@ $(document).ready(function() {
 		return false;
 	});
 
-	var version = getUrlVars()["v"];
-	if(version!="5.9.5")
-	{
-		$("#update_tips").parent().removeClass("hide")
-	}
+	$("#branch").change(on_check_version);
+	$("#arch").change(on_check_version);
 });

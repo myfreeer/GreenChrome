@@ -18,9 +18,6 @@ void GreenChrome()
     // 读取配置
     ReadConfig(iniPath);
 
-    // 启动单次功能
-    bool first_run = OnceFeature(iniPath);
-
     // 自定义用户数据目录
     CustomUserData(iniPath);
 
@@ -39,6 +36,8 @@ void GreenChrome()
     {
         if (PathFileExistsW(parentPath) && _wcsicmp(parentPath, exePath) != 0)
         {
+            // 启动单次功能
+            bool first_run = OnceFeature(iniPath);
             CustomCommand(iniPath, exeFolder, exePath, first_run);
         }
     }
